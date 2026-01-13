@@ -41,7 +41,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: 'pip'
+          # cache: 'pip' - Will be enabled once pyproject.toml is created
 
       - name: Install dependencies
         run: |
