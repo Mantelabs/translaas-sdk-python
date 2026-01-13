@@ -1,0 +1,884 @@
+---
+alwaysApply: false
+---
+# Translaas SDK - Cursor Rules
+
+## Project Context
+
+This is an open-source Python SDK for the Translaas Translation Delivery API SaaS. The backend API is proprietary, but this SDK is open-sourced to allow community contributions and improvements.
+
+## Core Principles
+
+1. **Test-Driven Development (TDD)**: Write tests first, then implement code to make tests pass
+2. **SDK-First Design**: This is a client SDK - prioritize developer experience, ease of use, and clear APIs
+3. **Multi-Environment Support**: Must work seamlessly in Python 3.8+, CPython, PyPy, and modern Python runtimes
+4. **Open Source Ready**: Code should be clean, well-documented, and welcoming to contributors
+5. **Performance**: Minimize allocations, use async/await properly, optimize for common use cases
+6. **Modularity**: Keep packages focused and dependencies minimal
+7. **Python First**: Write in Python with type hints for type safety and better developer experience
+
+## Code Style
+
+### Python Conventions
+
+- Follow **PEP 8** style guide strictly
+- Use `async`/`await` for all I/O operations (HTTP calls, cache operations)
+- Use type hints (`typing` module) for all function signatures and class attributes
+- Use `Optional[T]` or `T | None` (Python 3.10+) for nullable types
+- Use `dataclasses` or `TypedDict` for structured data
+- Use `Enum` for constants with named values
+- Use `f-strings` for string formatting (Python 3.6+)
+- Use list/dict comprehensions where appropriate
+- Use context managers (`with` statements) for resource management
+- Use `pathlib.Path` for file paths instead of strings
+- Prefer `collections.abc` for abstract base classes
+
+### Naming Conventions
+
+- **Classes**: PascalCase (e.g., `TranslaasClient`, `TranslaasOptions`)
+- **Functions/Methods**: snake_case (e.g., `get_entry`, `get_entry_async`)
+- **Variables/Parameters**: snake_case (e.g., `project_id`, `lang`)
+- **Private attributes/methods**: snake_case with `_` prefix (e.g., `_http_client`, `_build_cache_key`)
+- **Constants**: UPPER_SNAKE_CASE (e.g., `DEFAULT_TIMEOUT`, `LANGUAGE_CODES`)
+- **Modules**: snake_case (e.g., `translaas_client.py`)
+- **Packages**: snake_case (e.g., `translaas/`)
+- **Type aliases**: PascalCase (e.g., `LanguageCode`, `CacheMode`)
+
+### Code Organization
+
+```python
+# Order within a module/file:
+# 1. Standard library imports
+# 2. Third-party imports
+# 3. Local application imports
+# 4. Type definitions and type aliases
+# 5. Constants
+# 6. Classes
+#    - Class docstring
+#    - Class variables
+#    - __init__ method
+#    - Public methods
+#    - Private methods
+#    - Properties
+#    - Special methods (__str__, __repr__, etc.)
+```
+
+## Package Structure
+
+### Package Organization
+
+The SDK uses a standard Python package structure:
+
+```
+translaas/
+├── translaas/
+│   ├── __init__.py
+│   ├── models/              # DTOs and models (no dependencies)
+│   │   ├── __init__.py
+│   │   └── models.py
+│   ├── client/              # Core HTTP client
+│   │   ├── __init__.py
+│   │   └── client.py
+│   ├── caching/             # In-memory caching
+│   │   ├── __init__.py
+│   │   └── cache.py
+│   ├── caching_file/        # File-based caching
+│   │   ├── __init__.py
+│   │   └── file_cache.py
+│   └── exceptions.py        # Exception classes
+├── tests/
+│   ├── __init__.py
+│   ├── test_client.py
+│   └── test_cache.py
+├── pyproject.toml           # Build configuration (PEP 518)
+├── setup.py                  # Setuptools configuration (if needed)
+├── setup.cfg                  # Additional configuration
+├── README.md
+├── LICENSE
+└── .gitignore
+```
+
+### Package Dependencies
+
+- **translaas.models**: No dependencies (pure types/models)
+- **translaas.client**: Depends on `translaas.models`, `httpx` or `requests`
+- **translaas.caching**: Depends on `translaas.models`
+- **translaas.caching_file**: Depends on `translaas.client`, `translaas.models`
+- **translaas**: Main package that imports all modules
+
+### Setup.py / pyproject.toml Management
+
+**CRITICAL**: When files are added or removed, ensure:
+- Package includes are updated in `setup.py` or `pyproject.toml` (`packages` or `[tool.setuptools.packages.find]`)
+- Dependencies are correctly listed in `install_requires` or `[project.dependencies]`
+- Entry points are updated if adding CLI tools or plugins
+- Version is updated in `__version__` or `[project.version]`
+
+#### File Management Rules
+
+- **When creating a new module**: Ensure it's included in package discovery (`find_packages()` or `[tool.setuptools.packages.find]`)
+- **When deleting a module**: Remove imports from `__init__.py` if it was exported
+- **When creating a new subpackage**: Add `__init__.py` file (even if empty for Python 3.3+)
+- **When removing a subpackage**: Remove directory and update imports
+
+#### Verification
+
+After adding or removing files/packages:
+- Verify the package builds successfully: `python -m build` or `pip install -e .`
+- Verify type checking: `mypy translaas/` or `pyright translaas/`
+- Ensure all imports resolve correctly
+- Ensure all test packages can import the source packages
+
+## Architecture Guidelines
+
+### Package Responsibilities
+
+- **translaas.models**: DTOs only - no business logic, no dependencies
+- **translaas.client**: Core HTTP client - minimal dependencies, no framework abstractions
+- **translaas.caching**: Caching abstractions and implementations - depends on Models
+- **translaas.caching_file**: File-based caching - depends on Client and Models
+- **translaas**: Main package that exports everything - depends on all modules
+
+### Dependency Rules
+
+- **Never** add dependencies without strong justification
+- Prefer standard library modules over third-party libraries
+- Use `httpx` for async HTTP (preferred) or `requests` for sync HTTP
+- Use `aiofiles` for async file operations if needed
+- Keep Models package dependency-free
+- Use type stubs (`types-*` packages) for third-party libraries without type hints
+
+### API Design
+
+- **Public APIs**: Must be stable, well-documented, and version-friendly
+- **Internal APIs**: Use `_` prefix, document with docstrings
+- **Async Methods**: All I/O operations should support async (use `async def`)
+- **Cancellation**: Support cancellation tokens (`asyncio.CancelledError` or custom cancellation)
+- **Error Handling**: Use custom exception classes (`TranslaasException`) for API errors
+- **Nullability**: Be explicit about nullable types (`Optional[T]` or `T | None`)
+
+### Example Public API Pattern
+
+```python
+async def get_entry(
+    self,
+    group: str,
+    entry: str,
+    lang: str,
+    number: int | None = None,
+    *,
+    cancellation_token: asyncio.CancelledError | None = None
+) -> str:
+    """
+    Gets a single translation entry.
+    
+    Args:
+        group: The translation group name
+        entry: The translation entry key
+        lang: The language code (e.g., "en", "fr")
+        number: Optional number for pluralization
+        cancellation_token: Optional cancellation token
+        
+    Returns:
+        The translated text
+        
+    Raises:
+        TranslaasException: Thrown when the API returns an error
+        
+    Example:
+        ```python
+        translation = await client.get_entry("ui", "button.save", "en")
+        ```
+    """
+```
+
+## Python Type Hints Guidelines
+
+### Type Safety
+
+- Use type hints for all function signatures and class attributes
+- Use `mypy` or `pyright` for static type checking
+- Prefer `typing.Protocol` for structural typing over ABCs when appropriate
+- Use `TypedDict` for dictionary structures with known keys
+- Use `dataclasses` or `NamedTuple` for structured data
+- Avoid `Any` - use `object` or proper types
+- Use type guards (`isinstance` checks) for runtime type checking
+- Use `Literal` for literal types
+
+### Type Definitions
+
+```python
+from dataclasses import dataclass
+from enum import Enum
+from typing import Optional
+
+# Enum for cache modes
+class CacheMode(Enum):
+    NONE = 0
+    ENTRY = 1
+    GROUP = 2
+    PROJECT = 3
+
+# Dataclass for configuration
+@dataclass
+class TranslaasOptions:
+    api_key: str
+    base_url: str
+    cache_mode: CacheMode = CacheMode.NONE
+    timeout: Optional[float] = None  # seconds
+
+# Type alias for language codes
+LanguageCode = str
+
+# Constants for language codes
+class LanguageCodes:
+    ENGLISH = 'en'
+    FRENCH = 'fr'
+    SPANISH = 'es'
+    # ...
+```
+
+### Module System
+
+- Use standard Python imports (`import`, `from ... import`)
+- Use `__all__` to define public API exports
+- Use relative imports within packages (`from . import module`)
+- Use absolute imports for external packages
+- Provide `__init__.py` files for all packages (can be empty)
+
+## Error Handling
+
+### Error Types
+
+- **TranslaasException**: Base exception class for all Translaas API errors
+- **TranslaasApiException**: HTTP errors from the API (status codes)
+- **TranslaasConfigurationException**: Configuration/setup errors
+- Use standard library exceptions (`ValueError`, `TypeError`) for validation errors
+
+### Error Handling Pattern
+
+```python
+import httpx
+from translaas.exceptions import TranslaasApiException
+
+async def fetch_translation(self, url: str, request_body: dict) -> str:
+    try:
+        async with httpx.AsyncClient(timeout=self.options.timeout) as client:
+            response = await client.get(
+                url,
+                headers={
+                    'X-Api-Key': self.options.api_key,
+                    'Content-Type': 'application/json',
+                },
+                json=request_body,
+            )
+            
+            response.raise_for_status()
+            return response.text
+            
+    except httpx.HTTPStatusError as e:
+        raise TranslaasApiException(
+            f"API request failed: {e.response.status_text}",
+            status_code=e.response.status_code
+        ) from e
+    except httpx.RequestError as e:
+        raise TranslaasApiException(
+            f"Failed to retrieve translation: {str(e)}"
+        ) from e
+```
+
+## Serialization
+
+### JSON Handling
+
+- Use standard library `json` module (`json.loads()`, `json.dumps()`)
+- Use `pydantic` for runtime validation if needed (optional dependency)
+- Keep DTOs simple - use `dataclasses` or `TypedDict`
+- Use `@dataclass_json` decorator from `dataclasses-json` if needed
+
+### Example DTO
+
+```python
+from dataclasses import dataclass
+from typing import Optional
+
+@dataclass
+class GetTranslationRequest:
+    group: str
+    entry: str
+    lang: str
+    n: Optional[int] = None  # Pluralization number
+```
+
+## Caching
+
+### Cache Key Strategy
+
+- Use consistent, predictable cache keys
+- Include all relevant parameters in cache keys
+- Consider cache key collisions across projects/groups
+- Use URL-safe characters in cache keys
+
+### Cache Implementation
+
+- Default to `dict` for simple in-memory caching
+- Use `cachetools` library for advanced caching (TTL, LRU, etc.)
+- Support custom cache providers via `TranslaasCacheProvider` protocol
+- Respect cache expiration settings
+- Handle cache failures gracefully (fallback to API)
+- Use `threading.Lock` or `asyncio.Lock` for thread-safe caching
+
+## HTTP Client
+
+### Configuration
+
+- Use `httpx` for async HTTP (preferred) or `requests` for sync HTTP
+- Support configurable timeouts via `timeout` parameter
+- Support retry policies (consider `tenacity` library if needed)
+- Set appropriate default headers (`X-Api-Key`, `Content-Type`, `Accept`)
+- Use connection pooling for better performance
+
+### Request/Response Handling
+
+- All endpoints use GET with JSON request body (unusual but matches API)
+- Prefer raw text responses when possible (for single entries)
+- Support JSON fallback mode
+- Handle HTTP status codes appropriately (`response.raise_for_status()`)
+- Include request/response logging hooks (for debugging)
+
+## Documentation
+
+### Docstrings
+
+- **Required** for all public APIs
+- Use Google-style or NumPy-style docstrings (be consistent)
+- Include parameter descriptions with `Args:`
+- Include return value descriptions with `Returns:`
+- Include exception documentation with `Raises:`
+- Include usage examples with `Example:`
+- Use `See Also:` for related APIs
+
+### Example Documentation
+
+```python
+async def get_group(
+    self,
+    project: str,
+    group: str,
+    lang: str,
+    format: Optional[str] = None,
+    *,
+    cancellation_token: Optional[asyncio.CancelledError] = None
+) -> TranslationGroup:
+    """
+    Gets all translations for a translation group.
+    
+    Args:
+        project: The project identifier
+        group: The translation group name
+        lang: The language code (e.g., "en", "fr")
+        format: Optional format parameter
+        cancellation_token: Optional cancellation token
+        
+    Returns:
+        A TranslationGroup containing all entries for the group
+        
+    Raises:
+        TranslaasApiException: Thrown when the API returns an error
+        
+    Example:
+        ```python
+        group = await client.get_group("my-project", "ui", "en")
+        for key, value in group.entries.items():
+            print(f"{key}: {value}")
+        ```
+    """
+```
+
+## Test-Driven Development (TDD)
+
+### TDD Workflow
+
+Follow the **Red-Green-Refactor** cycle:
+
+1. **Red**: Write a failing test that describes the desired behavior
+2. **Green**: Write the minimum code necessary to make the test pass
+3. **Refactor**: Improve the code while keeping tests green
+
+### TDD Principles
+
+- **Write tests first** - Tests define the API contract and expected behavior
+- **One test at a time** - Focus on a single behavior per test
+- **Test behavior, not implementation** - Tests should verify outcomes, not internal details
+- **Keep tests simple** - Each test should verify one thing
+- **Refactor with confidence** - Tests provide safety net for refactoring
+
+### TDD Workflow Example
+
+```python
+# 1. RED: Write failing test
+import pytest
+from translaas.client import TranslaasClient
+
+def test_get_entry_returns_translation_when_entry_exists():
+    # Arrange
+    client = create_client()
+    
+    # Act
+    result = await client.get_entry('ui', 'button.save', 'en')
+    
+    # Assert
+    assert result == 'Save'
+
+# 2. GREEN: Implement minimum code to pass
+async def get_entry(self, group: str, entry: str, lang: str) -> str:
+    # Minimal implementation
+    return 'Save'  # Hard-coded to make test pass
+
+# 3. REFACTOR: Improve implementation while keeping tests green
+async def get_entry(self, group: str, entry: str, lang: str) -> str:
+    request_body = {'group': group, 'entry': entry, 'lang': lang}
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"{self.base_url}/api/translations/text",
+            headers={'X-Api-Key': self.api_key, 'Content-Type': 'application/json'},
+            json=request_body,
+        )
+        response.raise_for_status()
+        return response.text
+```
+
+## Test Project Structure
+
+### Directory Organization
+
+All test files should be placed in a `tests/` directory:
+
+```
+translaas/
+├── translaas/
+│   ├── __init__.py
+│   ├── client.py
+│   └── cache.py
+├── tests/
+│   ├── __init__.py
+│   ├── test_client.py
+│   └── test_cache.py
+└── pyproject.toml
+```
+
+### Test File Naming
+
+- Test files: `test_*.py` or `*_test.py` (pytest convention)
+- Example: `test_client.py` for `client.py`
+
+### Test Configuration
+
+The project should:
+- Use `pytest` as the testing framework
+- Use `pytest-asyncio` for async test support
+- Use `pytest-mock` or `unittest.mock` for mocking
+- Use `pytest-cov` for coverage reporting
+- Configure in `pytest.ini`, `pyproject.toml`, or `setup.cfg`
+
+### Example Test Configuration (pyproject.toml)
+
+```toml
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+asyncio_mode = "auto"
+addopts = "--cov=translaas --cov-report=html --cov-report=term"
+```
+
+## Testing Guidelines
+
+### Test Coverage Requirements
+
+- **Every public API** must have tests
+- **Every module** must have tests
+- Aim for high code coverage (80%+ for critical paths)
+- Test both success and failure scenarios
+
+### Test Categories
+
+1. **Unit Tests**: Test individual components in isolation
+2. **Integration Tests**: Test component interactions (HTTP client, caching)
+3. **Environment Compatibility Tests**: Verify behavior across Python versions
+
+### Test Naming Conventions
+
+Use descriptive test names following the pattern:
+```
+test_{method_name}_{scenario}_{expected_behavior}
+```
+
+Examples:
+- `test_get_entry_returns_translation_when_entry_exists`
+- `test_get_entry_raises_exception_when_api_returns_error`
+- `test_get_group_uses_cache_when_cache_enabled`
+
+### Test Organization
+
+Organize tests to mirror source structure:
+
+```
+translaas/
+├── translaas/
+│   ├── client.py
+│   └── cache.py
+└── tests/
+    ├── test_client.py
+    └── test_cache.py
+```
+
+### Test Patterns
+
+#### Arrange-Act-Assert (AAA)
+
+```python
+import pytest
+from unittest.mock import AsyncMock, patch
+from translaas.client import TranslaasClient
+
+@pytest.mark.asyncio
+async def test_get_entry_returns_translation_when_entry_exists():
+    # Arrange
+    mock_response = AsyncMock()
+    mock_response.text = 'Save'
+    mock_response.raise_for_status = AsyncMock()
+    
+    with patch('httpx.AsyncClient') as mock_client:
+        mock_client.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
+        client = TranslaasClient(api_key='test-key', base_url='https://api.test.com')
+    
+    # Act
+    result = await client.get_entry('ui', 'button.save', 'en')
+    
+    # Assert
+    assert result == 'Save'
+```
+
+#### Testing Async Code
+
+```python
+@pytest.mark.asyncio
+async def test_get_entry_raises_exception_when_request_fails():
+    # Arrange
+    client = create_client_with_failing_http_client()
+    
+    # Act & Assert
+    with pytest.raises(TranslaasApiException):
+        await client.get_entry('ui', 'button.save', 'en')
+```
+
+### Mocking Guidelines
+
+- **Mock external dependencies**: HTTP clients (httpx, requests), cache providers, file system
+- **Don't mock what you're testing**: Test the actual implementation
+- **Use test doubles**: Create test implementations for protocols/interfaces when appropriate
+- **Verify interactions**: Use mocks to verify method calls and parameters
+- Use `unittest.mock` or `pytest-mock` for mocking
+
+### Test Data
+
+- Use **test fixtures** for common test data (`@pytest.fixture`)
+- Create **test builders** for complex objects
+- Use **test data generators** for varied inputs
+- Keep test data **realistic** but **minimal**
+
+### Example Test Fixture
+
+```python
+import pytest
+from translaas.client import TranslaasClient
+from translaas.models import TranslaasOptions
+
+@pytest.fixture
+def translaas_options():
+    return TranslaasOptions(
+        api_key='test-api-key',
+        base_url='https://api.test.com',
+    )
+
+@pytest.fixture
+def translaas_client(translaas_options):
+    return TranslaasClient(translaas_options)
+```
+
+### Testing Error Scenarios
+
+Always test:
+- API errors (400, 404, 500, etc.)
+- Network failures
+- Timeout scenarios
+- Invalid configuration
+- None/empty parameters
+- Edge cases (empty responses, malformed JSON)
+
+### Testing Caching
+
+Test caching behavior:
+- Cache hits (return cached value)
+- Cache misses (fetch from API)
+- Cache expiration
+- Cache invalidation
+- Cache key generation
+
+### Running Tests
+
+```bash
+# Run all tests
+pytest
+
+# Run tests with coverage
+pytest --cov=translaas --cov-report=html
+
+# Run specific test file
+pytest tests/test_client.py
+
+# Run tests in watch mode
+pytest-watch
+
+# Run tests with verbose output
+pytest -v
+```
+
+## Testing Considerations
+
+- **TDD is mandatory** - Write tests before implementation
+- **Every module must have tests** - No module is complete without tests
+- **Test all public APIs** - Every public method needs test coverage
+- **Test error scenarios** - API errors, network failures, timeouts
+- **Test caching behavior** - Verify cache hits, misses, expiration
+- **Test Python version compatibility** - Ensure code works across supported Python versions
+- **Use test doubles/mocks** - Mock HTTP client, cache providers
+- **Test configuration validation** - Verify options are validated correctly
+- **Test edge cases** - None inputs, empty strings, boundary conditions
+
+## Performance Guidelines
+
+### Memory Management
+
+- Minimize object allocations in hot paths
+- Use object pooling for frequently created objects if needed
+- Prefer `dict` over objects for key-value lookups when keys are dynamic
+- Reuse objects where safe (e.g., HTTP client sessions)
+
+### Async/Await
+
+- Use `async`/`await` for all I/O operations
+- Use `asyncio.gather()` for parallel operations
+- Use `asyncio.as_completed()` when you need results as they complete
+- Handle cancellation with `asyncio.CancelledError`
+- Use `asyncio.create_task()` for concurrent operations
+
+### Caching
+
+- Cache at the appropriate level (Entry, Group, or Project)
+- Use sliding expiration for frequently accessed items
+- Use absolute expiration for stable data
+- Consider cache size limits (LRU eviction)
+- Use `functools.lru_cache` for function-level caching when appropriate
+
+## Open Source Considerations
+
+### Code Quality
+
+- Code should be self-documenting with clear naming
+- Add comments for non-obvious logic or workarounds
+- Keep functions focused and single-purpose
+- Refactor when code becomes complex
+
+### Community-Friendly
+
+- Use clear, descriptive variable names (avoid abbreviations)
+- Prefer explicit code over clever one-liners
+- Add examples and documentation
+- Make error messages helpful and actionable
+
+### Versioning
+
+- Follow Semantic Versioning (SemVer)
+- Document breaking changes clearly
+- Provide migration guides for major versions
+- Maintain backward compatibility when possible
+
+## Configuration
+
+### Options Pattern
+
+- Use `dataclasses` or `TypedDict` for configuration options
+- Validate configuration on initialization
+- Provide sensible defaults
+- Document all configuration options
+
+### Example Options
+
+```python
+from dataclasses import dataclass
+from enum import Enum
+from typing import Optional
+
+class CacheMode(Enum):
+    NONE = 0
+    ENTRY = 1
+    GROUP = 2
+    PROJECT = 3
+
+@dataclass
+class TranslaasOptions:
+    api_key: str  # Required
+    base_url: str  # Required
+    cache_mode: CacheMode = CacheMode.NONE  # Optional, defaults to CacheMode.NONE
+    timeout: Optional[float] = None  # Optional, seconds
+    cache_absolute_expiration: Optional[float] = None  # Optional, seconds
+    cache_sliding_expiration: Optional[float] = None  # Optional, seconds
+```
+
+## Git Conventions
+
+### Commit Messages
+
+Use conventional commits:
+- `feat:` New feature
+- `fix:` Bug fix
+- `docs:` Documentation changes
+- `refactor:` Code refactoring
+- `test:` Test additions/changes
+- `chore:` Maintenance tasks
+- `build:` Build system changes
+- `ci:` CI/CD changes
+
+### Branch Naming
+
+- `feature/description` - New features
+- `fix/description` - Bug fixes
+- `docs/description` - Documentation updates
+- `refactor/description` - Refactoring
+
+## Code Review Checklist
+
+Before submitting code:
+- [ ] **TDD followed** - Tests written before implementation
+- [ ] **Test file created** - Test file exists for new code
+- [ ] **All tests pass** - All tests pass (`pytest`)
+- [ ] **Test coverage adequate** - Public APIs have test coverage
+- [ ] **Type checking passes** - No type errors (`mypy translaas/` or `pyright translaas/`)
+- [ ] **Package builds** - Package builds successfully (`python -m build`)
+- [ ] **Docstrings added** - Public APIs have docstring documentation
+- [ ] **No unnecessary dependencies** - Dependencies are justified
+- [ ] **Error handling is appropriate** - Errors are handled correctly
+- [ ] **Async/await used correctly** - No blocking async code
+- [ ] **Nullability is explicit** - Types are explicit about nullability (`Optional[T]`)
+- [ ] **Code follows PEP 8** - Code follows Python style conventions
+- [ ] **Tests cover success and failure scenarios** - Both paths tested
+- [ ] **Tests use proper mocking** - Mocks are used appropriately
+- [ ] **README/docs updated** - Documentation updated if needed
+- [ ] **Linting passes** - Code passes `ruff`, `flake8`, or `pylint` checks
+
+## Common Patterns
+
+### HTTP Request Pattern
+
+```python
+import httpx
+from translaas.exceptions import TranslaasApiException
+
+async def fetch_translation(self, url: str, request_body: dict) -> str:
+    async with httpx.AsyncClient(timeout=self.options.timeout) as client:
+        response = await client.get(
+            url,
+            headers={
+                'X-Api-Key': self.options.api_key,
+                'Content-Type': 'application/json',
+            },
+            json=request_body,
+        )
+        
+        try:
+            response.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            raise TranslaasApiException(
+                f"API request failed: {e.response.status_text}",
+                status_code=e.response.status_code
+            ) from e
+        
+        return response.text
+```
+
+### Caching Pattern
+
+```python
+from typing import Optional
+from translaas.models import TranslationGroup
+
+async def get_group_cached(
+    self,
+    project: str,
+    group: str,
+    lang: str
+) -> TranslationGroup:
+    if self.options.cache_mode != CacheMode.NONE:
+        cache_key = self._build_cache_key(project, group, lang)
+        cached = self.cache_provider.get(cache_key)
+        if cached:
+            return cached
+    
+    result = await self._fetch_from_api(project, group, lang)
+    
+    if self.options.cache_mode != CacheMode.NONE:
+        self.cache_provider.set(
+            cache_key,
+            result,
+            absolute_expiration=self.options.cache_absolute_expiration,
+            sliding_expiration=self.options.cache_sliding_expiration,
+        )
+    
+    return result
+```
+
+## Prohibited Patterns
+
+- ❌ **Don't write code without tests first** - TDD is mandatory
+- ❌ **Don't skip test files** - Every module must have tests
+- ❌ **Don't use `Any`** - Use proper types or `object`
+- ❌ **Don't use `import *`** - Use explicit imports
+- ❌ **Don't block async code** - Use `async`/`await`, not blocking calls in async functions
+- ❌ **Don't catch and swallow errors silently** - Always handle errors appropriately
+- ❌ **Don't add dependencies without justification** - Minimize dependencies
+- ❌ **Don't ignore cancellation** - Support cancellation in async methods
+- ❌ **Don't create public APIs without docstrings** - Document all public APIs
+- ❌ **Don't commit code with failing tests** - All tests must pass
+- ❌ **Don't skip testing error scenarios** - Test both success and failure paths
+- ❌ **Don't use mutable default arguments** - Use `None` and assign in function body
+- ❌ **Don't use `==` for None comparisons** - Use `is None` or `is not None`
+
+## Environment Compatibility
+
+### Python Version Support
+
+- Support Python 3.8+ (minimum)
+- Test on Python 3.8, 3.9, 3.10, 3.11, 3.12
+- Use `python_requires` in `setup.py` or `pyproject.toml`
+- Use `typing_extensions` for features not available in older Python versions
+
+### Package Distribution
+
+- Use `setuptools` or `poetry` for package management
+- Provide wheels (`.whl`) for faster installation
+- Provide source distributions (`.tar.gz`) for compatibility
+- Use `pyproject.toml` (PEP 518) for modern Python packaging
+
+### Module Formats
+
+- Use standard Python modules (`.py` files)
+- Support both sync and async APIs when appropriate
+- Use `__init__.py` files for package initialization
+- Use `__all__` to define public API exports
+
+## Remember
+
+This SDK is the public face of Translaas for Python developers. Every API, every error message, and every piece of documentation represents the Translaas brand. Make it excellent.

@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    name: Build and Test (Python ${{ matrix.python-version }} - ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            python-version: '3.8'
+          - os: ubuntu-latest
+            python-version: '3.9'
+          - os: ubuntu-latest
+            python-version: '3.10'
+          - os: ubuntu-latest
+            python-version: '3.11'
+          - os: ubuntu-latest
+            python-version: '3.12'
+          - os: windows-latest
+            python-version: '3.10'
+          - os: macos-latest
+            python-version: '3.10'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          # cache: 'pip' - Will be enabled once pyproject.toml is created
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          # Skip installation until pyproject.toml is created
+          # pip install -e ".[dev]"
+        continue-on-error: true
+
+      - name: Run linting
+        run: |
+          # Skip linting until pyproject.toml and source code are created
+          echo "Skipping linting - pyproject.toml not yet created"
+        continue-on-error: true
+
+      - name: Run type checking
+        run: |
+          # Skip type checking until source code is created
+          echo "Skipping type checking - source code not yet created"
+        continue-on-error: true
+
+      - name: Build
+        run: |
+          # Skip build until pyproject.toml is created
+          echo "Skipping build - pyproject.toml not yet created"
+        continue-on-error: true
+
+      - name: Run tests
+        run: |
+          # Skip tests until source code and tests are created
+          echo "Skipping tests - source code not yet created"
+        continue-on-error: true
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-${{ matrix.os }}-python-${{ matrix.python-version }}
+          path: |
+            coverage.xml
+            .coverage
+          retention-days: 30
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          files: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false

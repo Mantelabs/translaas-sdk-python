@@ -1,0 +1,46 @@
+version: 2
+updates:
+  # Enable version updates for pip
+  - package-ecosystem: 'pip'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+    open-pull-requests-limit: 10
+    labels:
+      - 'dependencies'
+      - 'automated'
+    commit-message:
+      prefix: 'chore'
+      include: 'scope'
+    # Group updates for related packages
+    groups:
+      typing:
+        patterns:
+          - 'typing-extensions'
+          - 'types-*'
+      testing:
+        patterns:
+          - 'pytest'
+          - 'pytest-*'
+          - 'coverage'
+          - 'pytest-cov'
+      http:
+        patterns:
+          - 'httpx'
+          - 'requests'
+      linting:
+        patterns:
+          - 'ruff'
+          - 'black'
+          - 'mypy'
+          - 'pylint'
+          - 'flake8'
+
+  # Enable version updates for GitHub Actions
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+    labels:
+      - 'github-actions'
+      - 'automated'
