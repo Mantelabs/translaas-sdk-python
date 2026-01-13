@@ -43,11 +43,14 @@ repos:
         stages: []
 
   # Run tests before push
+  # Note: Exit code 5 (no tests collected) is allowed to pass
+  # This prevents blocking pushes during initial project setup when no tests exist yet
   - repo: local
     hooks:
       - id: pytest
         name: pytest
-        entry: pytest
+        # Allow exit code 5 (no tests) to pass - works with Git Bash on Windows
+        entry: bash -c 'pytest || test $? -eq 5'
         language: system
         types: [python]
         pass_filenames: false
