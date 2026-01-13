@@ -34,11 +34,18 @@ We welcome contributions to the Translaas SDK! This document provides guidelines
 
 ### Optional: Auto-format on commit (pre-commit hook)
 
-This repo includes an **opt-in** pre-commit hook that will:
+This repo includes an **opt-in** git hooks setup using the `pre-commit` framework that will:
 
-- Run `ruff` and `black` on **staged files**
-- Format code according to project standards
-- Re-stage formatted files so your commit stays consistent
+**Pre-commit hooks (run before each commit):**
+- Run `ruff` linting with auto-fix on **staged files**
+- Run `ruff-format` (black-compatible formatter) on **staged files**
+- Check for trailing whitespace, end-of-file issues
+- Validate YAML, TOML, and JSON files
+- Check for merge conflicts and debug statements
+- **Note:** `mypy` type checking is disabled in pre-commit (can be slow) - run manually: `mypy translaas/`
+
+**Pre-push hooks (run before each push):**
+- Run `pytest` to ensure all tests pass
 
 Enable it once per clone:
 
@@ -48,7 +55,13 @@ Enable it once per clone:
 
 # Windows (PowerShell)
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/setup-githooks.ps1
+
+# Or manually:
+pip install -e ".[dev]"
+pre-commit install --hook-type pre-commit --hook-type pre-push
 ```
+
+**Note:** Hooks can be skipped if needed using `git commit --no-verify` or `git push --no-verify`, but this should be used sparingly.
 
 ### Package Structure
 
@@ -123,12 +136,12 @@ dev = [
 
 When writing code, be aware of environment differences:
 
-- **Python 3.8+**: 
+- **Python 3.8+**:
   - Full async/await support
   - Type hints available
   - Use `typing_extensions` for features not in older Python versions
 
-- **AsyncIO**: 
+- **AsyncIO**:
   - Use `asyncio` for async operations
   - Use `httpx` for async HTTP requests
   - Support cancellation tokens
@@ -342,13 +355,13 @@ class TestTranslaasClient:
         mock_response = AsyncMock()
         mock_response.text = 'Save'
         mock_response.raise_for_status = AsyncMock()
-        
+
         with patch('httpx.AsyncClient') as mock_client:
             mock_client.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
-            
+
             # Act
             result = await self.client.get_entry('ui', 'button.save', 'en')
-            
+
             # Assert
             assert result == 'Save'
 
@@ -364,14 +377,14 @@ class TestTranslaasClient:
             response=mock_response
         )
         mock_response.status_code = 404
-        
+
         with patch('httpx.AsyncClient') as mock_client:
             mock_client.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
-            
+
             # Act & Assert
             with pytest.raises(Exception) as exc_info:
                 await self.client.get_entry('ui', 'button.save', 'en')
-            
+
             assert 'API request failed' in str(exc_info.value)
 ```
 
@@ -448,7 +461,7 @@ Update version for:
    # pyproject.toml
    [project]
    version = "1.2.0"
-   
+
    # Or __init__.py
    __version__ = "1.2.0"
    ```

@@ -1,0 +1,55 @@
+# Pre-commit hooks configuration
+# Install: pip install pre-commit
+# Setup: pre-commit install
+# Setup with pre-push: pre-commit install --hook-type pre-commit --hook-type pre-push
+
+repos:
+  # Ruff for linting and formatting (ruff-format is black-compatible)
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.6
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+      - id: ruff-format
+        # ruff-format is black-compatible, so we use it instead of black
+
+  # General file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-json
+      - id: check-added-large-files
+        args: ['--maxkb=500']
+      - id: check-merge-conflict
+      - id: debug-statements
+
+  # Type checking with mypy
+  # NOTE: Disabled by default in pre-commit as it can be slow
+  # Run manually: mypy translaas/
+  # Or enable by removing 'stages: []' below
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.8.0
+    hooks:
+      - id: mypy
+        # Removed types-all as it includes packages that don't exist (types-pkg-resources)
+        # Add specific type stubs as needed: additional_dependencies: [types-httpx]
+        args: [--ignore-missing-imports, --no-strict-optional]
+        exclude: ^tests/
+        # Disabled in pre-commit - run manually or in CI for better performance
+        stages: []
+
+  # Run tests before push
+  - repo: local
+    hooks:
+      - id: pytest
+        name: pytest
+        entry: pytest
+        language: system
+        types: [python]
+        pass_filenames: false
+        always_run: false
+        stages: [pre-push]
