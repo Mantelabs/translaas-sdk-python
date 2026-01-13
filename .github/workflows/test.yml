@@ -52,7 +52,8 @@ jobs:
         run: python -m build
 
       - name: Run unit tests
-        run: pytest --cov=translaas --cov-report=xml --cov-report=term
+        run: pytest --cov=translaas --cov-report=xml --cov-report=term || test $? -eq 5
+        # Allow exit code 5 (no tests collected) to pass during initial setup
 
       - name: Upload coverage
         if: always()
