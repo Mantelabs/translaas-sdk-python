@@ -1,5 +1,6 @@
 """Tests for language resolver."""
 
+from typing import Optional
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -130,8 +131,8 @@ class TestLanguageResolver:
         """Test that providers are evaluated in order."""
         call_order = []
 
-        async def make_provider(name: str, return_value: str | None) -> Mock:
-            async def get_language() -> str | None:
+        async def make_provider(name: str, return_value: Optional[str]) -> Mock:
+            async def get_language() -> Optional[str]:
                 call_order.append(name)
                 return return_value
 
