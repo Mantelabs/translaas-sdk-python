@@ -31,3 +31,10 @@ Write-Host "To skip hooks (use with caution):" -ForegroundColor Cyan
 Write-Host "  git commit --no-verify" -ForegroundColor White
 Write-Host "  git push --no-verify" -ForegroundColor White
 Write-Host ""
+Write-Host "For partial commits (committing feature files, tests, or docs separately):" -ForegroundColor Cyan
+Write-Host "  Option 1: Skip specific hooks: `$env:SKIP='ruff,ruff-format'; git commit -m 'message'" -ForegroundColor White
+Write-Host "  Option 2: Skip all hooks: git commit --no-verify -m 'message'" -ForegroundColor White
+Write-Host ""
+Write-Host "Note: Hooks only run on staged files, but some checks may fail if they" -ForegroundColor Yellow
+Write-Host "require consistency across the entire codebase (e.g., imports)." -ForegroundColor Yellow
+Write-Host ""
