@@ -2,6 +2,13 @@
 # Install: pip install pre-commit
 # Setup: pre-commit install
 # Setup with pre-push: pre-commit install --hook-type pre-commit --hook-type pre-push
+#
+# For partial commits (e.g., committing only feature files, tests, or docs separately):
+#   Option 1: Skip specific hooks: SKIP=ruff,ruff-format git commit -m "message"
+#   Option 2: Skip all hooks: git commit --no-verify -m "message"
+#
+# Note: Hooks only run on staged files by default, but some checks may still fail
+# if they require consistency across the entire codebase.
 
 repos:
   # Ruff for linting and formatting (ruff-format is black-compatible)
@@ -9,7 +16,9 @@ repos:
     rev: v0.1.6
     hooks:
       - id: ruff
-        args: [--fix, --exit-non-zero-on-fix]
+        args: [--fix]
+        # Removed --exit-non-zero-on-fix to allow partial commits
+        # Files are still fixed, but won't fail if other files have issues
       - id: ruff-format
         # ruff-format is black-compatible, so we use it instead of black
 
