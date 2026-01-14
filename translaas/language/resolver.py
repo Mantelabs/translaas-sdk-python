@@ -41,9 +41,7 @@ class LanguageResolver:
             TranslaasLanguageResolutionException: If providers list is empty.
         """
         if not providers:
-            raise TranslaasLanguageResolutionException(
-                "At least one language provider is required"
-            )
+            raise TranslaasLanguageResolutionException("At least one language provider is required")
         self.providers = providers
 
     async def resolve(self) -> str:
@@ -60,14 +58,12 @@ class LanguageResolver:
                 language = await provider.get_language()
                 if language:
                     return language
-            except Exception as e:
+            except Exception:
                 # Log error but continue to next provider
                 # In a production system, you might want to log this
                 continue
 
-        raise TranslaasLanguageResolutionException(
-            "Could not resolve language from any provider"
-        )
+        raise TranslaasLanguageResolutionException("Could not resolve language from any provider")
 
     async def resolve_or_none(self) -> Optional[str]:
         """Resolve the current language, returning None if not found.
