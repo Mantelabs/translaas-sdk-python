@@ -121,15 +121,15 @@ options = TranslaasOptions(
     # Required: API key and base URL
     api_key='your-api-key',
     base_url='https://api.translaas.com',
-    
+
     # Optional: Default language fallback
     default_language=LanguageCodes.ENGLISH,
-    
+
     # Optional: Caching configuration
     cache_mode=CacheMode.GROUP,
     cache_absolute_expiration=3600.0,  # 1 hour in seconds
     cache_sliding_expiration=900.0,  # 15 minutes in seconds
-    
+
     # Optional: HTTP Client timeout
     timeout=30.0,  # 30 seconds
 )
@@ -275,7 +275,7 @@ The SDK communicates with the following Translaas API endpoints:
 | `/api/translations/project` | GET    | Get all translations for a project  |
 | `/api/translations/locales` | GET    | Get available locales for a project |
 
-**Note:** All endpoints use GET requests with JSON request bodies.
+**Note:** All endpoints use GET requests with query parameters.
 
 ## Authentication
 
