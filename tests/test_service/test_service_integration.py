@@ -105,8 +105,9 @@ class TestTranslaasServiceIntegration:
         service = TranslaasService(options, language_resolver=language_resolver)
         async with service:
             with patch.object(service._client, "get_entry", new_callable=AsyncMock) as mock_get:
-                mock_get.return_value = "Vous avez {count} messages"
-                result = await service.t("messages", "count", 5.0, {"count": "5"})
+                mock_get.return_value = "Vous avez 5 messages"
+                # Test pluralization with automatic language resolution
+                result = await service.t("messages", "count", 5.0)
                 assert result == "Vous avez 5 messages"
                 mock_get.assert_called_once_with(
                     group="messages",

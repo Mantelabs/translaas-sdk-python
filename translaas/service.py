@@ -6,16 +6,16 @@ parameter replacement.
 """
 
 import re
-from typing import Any, Dict, List, Optional, Union, overload
+from typing import Dict, Optional, Union, overload
 
 from translaas.client.client import TranslaasClient
 from translaas.exceptions import (
-    TranslaasApiException,
+    TranslaasConfigurationException,
     TranslaasLanguageResolutionException,
 )
 from translaas.language.resolver import LanguageResolver
 from translaas.models.options import TranslaasOptions
-from translaas.models.protocols import ITranslaasCacheProvider, ITranslaasService, ILanguageProvider
+from translaas.models.protocols import ITranslaasCacheProvider, ITranslaasService
 from translaas.models.responses import ProjectLocales, TranslationGroup, TranslationProject
 
 
@@ -42,10 +42,10 @@ class TranslaasService(ITranslaasService):
         async with TranslaasService(options, language_resolver=resolver) as service:
             # Automatic language resolution
             translation = await service.t('common', 'welcome')
-            
+
             # Explicit language
             translation = await service.t('common', 'welcome', 'fr')
-            
+
             # With parameters
             translation = await service.t('common', 'greeting', {'name': 'John'})
         ```
@@ -175,7 +175,7 @@ class TranslaasService(ITranslaasService):
             # Escape the key to prevent regex injection
             escaped_key = re.escape(key)
             # Replace {{key}} with value
-            pattern = r'\{\{' + escaped_key + r'\}\}'
+            pattern = r"\{\{" + escaped_key + r"\}\}"
             result = re.sub(pattern, value, result)
 
         # Then, replace {key} format (single braces)
@@ -183,7 +183,7 @@ class TranslaasService(ITranslaasService):
             # Escape the key to prevent regex injection
             escaped_key = re.escape(key)
             # Replace {key} with value, but not if it's part of {{key}}
-            pattern = r'(?<!\{)\{' + escaped_key + r'\}(?!\})'
+            pattern = r"(?<!\{)\{" + escaped_key + r"\}(?!\})"
             result = re.sub(pattern, value, result)
 
         return result
