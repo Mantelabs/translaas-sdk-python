@@ -217,7 +217,7 @@ class TranslaasClient(ITranslaasClient):
 
         Args:
             endpoint: The API endpoint path.
-            request_body: The request body as a dictionary.
+            request_body: The request parameters as a dictionary (converted to query parameters).
             response_type: The expected response type ('json' or 'text').
 
         Returns:
@@ -232,15 +232,18 @@ class TranslaasClient(ITranslaasClient):
         url = endpoint.lstrip("/")
 
         try:
-            # httpx's get() doesn't support request body, so we use request() for GET with JSON body
-            # (non-standard but required by the API)
-            json_content = json.dumps(request_body)
-            response = await client.request(
-                "GET",
-                url,
-                content=json_content.encode("utf-8"),
-                headers={"Content-Type": "application/json"},
-            )
+            # Convert request body dict to query parameters
+            # Filter out None values and convert to strings
+            params: Dict[str, str] = {}
+            for key, value in request_body.items():
+                if value is not None:
+                    if isinstance(value, dict):
+                        # For nested dicts (like parameters), serialize as JSON string
+                        params[key] = json.dumps(value)
+                    else:
+                        params[key] = str(value)
+
+            response = await client.get(url, params=params)
             response.raise_for_status()
 
             if response_type == "json":

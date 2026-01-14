@@ -97,7 +97,7 @@ class TestTranslaasClientIntegration:
             ),
         }
 
-        async def mock_request(method: str, url: Any, **kwargs: Any) -> httpx.Response:
+        async def mock_get(url: Any, **kwargs: Any) -> httpx.Response:
             """Mock GET request."""
             # Convert URL to string for comparison
             url_str = str(url) if not isinstance(url, str) else url
@@ -108,7 +108,7 @@ class TestTranslaasClientIntegration:
             raise ValueError(f"Unexpected URL: {url_str}")
 
         async with TranslaasClient(options) as client:
-            with patch.object(client._http_client, "request", side_effect=mock_request):
+            with patch.object(client._http_client, "get", side_effect=mock_get):
                 # Test all methods
                 entry = await client.get_entry("group1", "entry1", "en")
                 assert entry == "Hello"
@@ -136,7 +136,7 @@ class TestTranslaasClientIntegration:
 
         async with TranslaasClient(options, cache_provider=cache_provider) as client:
             with patch.object(
-                client._http_client, "request", new_callable=AsyncMock, return_value=mock_response
+                client._http_client, "get", new_callable=AsyncMock, return_value=mock_response
             ):
                 # First call - should hit API and cache
                 result1 = await client.get_entry("group1", "entry1", "en")
@@ -164,7 +164,7 @@ class TestTranslaasClientIntegration:
 
         async with TranslaasClient(options, cache_provider=cache_provider) as client:
             with patch.object(
-                client._http_client, "request", new_callable=AsyncMock, return_value=mock_response
+                client._http_client, "get", new_callable=AsyncMock, return_value=mock_response
             ):
                 # First call - should hit API and cache
                 result1 = await client.get_group("project1", "group1", "en")
@@ -190,7 +190,7 @@ class TestTranslaasClientIntegration:
 
         async with TranslaasClient(options, cache_provider=cache_provider) as client:
             with patch.object(
-                client._http_client, "request", new_callable=AsyncMock, return_value=mock_response
+                client._http_client, "get", new_callable=AsyncMock, return_value=mock_response
             ):
                 # First call - should hit API and cache
                 result1 = await client.get_project("project1", "en")
@@ -216,7 +216,7 @@ class TestTranslaasClientIntegration:
 
         async with TranslaasClient(options, cache_provider=cache_provider) as client:
             with patch.object(
-                client._http_client, "request", new_callable=AsyncMock, return_value=mock_response
+                client._http_client, "get", new_callable=AsyncMock, return_value=mock_response
             ):
                 # Call should hit API but not cache
                 result1 = await client.get_entry("group1", "entry1", "en")
@@ -244,7 +244,7 @@ class TestTranslaasClientIntegration:
 
         async with TranslaasClient(options, cache_provider=cache_provider) as client:
             with patch.object(
-                client._http_client, "request", new_callable=AsyncMock, return_value=mock_response
+                client._http_client, "get", new_callable=AsyncMock, return_value=mock_response
             ):
                 await client.get_entry("group1", "entry1", "en")
                 await client.get_entry("group1", "entry1", "fr")
@@ -268,7 +268,7 @@ class TestTranslaasClientIntegration:
 
         async with TranslaasClient(options, cache_provider=cache_provider) as client:
             with patch.object(
-                client._http_client, "request", new_callable=AsyncMock, return_value=mock_response
+                client._http_client, "get", new_callable=AsyncMock, return_value=mock_response
             ):
                 await client.get_entry("group1", "entry1", "en", parameters={"name": "John"})
                 await client.get_entry("group1", "entry1", "en", parameters={"name": "Jane"})
@@ -290,7 +290,7 @@ class TestTranslaasClientIntegration:
 
         async with TranslaasClient(options, cache_provider=cache_provider) as client:
             with patch.object(
-                client._http_client, "request", new_callable=AsyncMock, return_value=mock_response
+                client._http_client, "get", new_callable=AsyncMock, return_value=mock_response
             ):
                 await client.get_entry("group1", "entry1", "en", number=1.0)
                 await client.get_entry("group1", "entry1", "en", number=2.0)
@@ -309,7 +309,7 @@ class TestTranslaasClientIntegration:
 
         async with TranslaasClient(options) as client:
             with patch.object(
-                client._http_client, "request", new_callable=AsyncMock, return_value=mock_response
+                client._http_client, "get", new_callable=AsyncMock, return_value=mock_response
             ):
                 with pytest.raises(TranslaasApiException) as exc_info:
                     await client.get_entry("group1", "entry1", "en")
@@ -333,7 +333,7 @@ class TestTranslaasClientIntegration:
             assert client._http_client.timeout.connect == 10.0
 
             with patch.object(
-                client._http_client, "request", new_callable=AsyncMock, return_value=mock_response
+                client._http_client, "get", new_callable=AsyncMock, return_value=mock_response
             ):
                 result = await client.get_entry("group1", "entry1", "en")
                 assert result == "Success"
@@ -351,7 +351,7 @@ class TestTranslaasClientIntegration:
         ]
 
         async with TranslaasClient(options) as client:
-            with patch.object(client._http_client, "request", side_effect=mock_responses):
+            with patch.object(client._http_client, "get", side_effect=mock_responses):
                 # Make concurrent requests
                 results = await asyncio.gather(
                     *[client.get_entry("group1", f"entry{i}", "en") for i in range(5)]
@@ -378,7 +378,7 @@ class TestTranslaasClientIntegration:
 
         async with TranslaasClient(options, cache_provider=cache_provider) as client:
             with patch.object(
-                client._http_client, "request", new_callable=AsyncMock, return_value=mock_response
+                client._http_client, "get", new_callable=AsyncMock, return_value=mock_response
             ):
                 # Should fall back to API when cache is corrupted
                 result = await client.get_group("project1", "group1", "en")

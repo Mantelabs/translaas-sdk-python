@@ -138,7 +138,7 @@ class TestTranslaasClientGetEntry:
         )
 
         with patch.object(
-            client._http_client, "request", new_callable=AsyncMock, return_value=mock_response
+            client._http_client, "get", new_callable=AsyncMock, return_value=mock_response
         ):
             result = await client.get_entry("group1", "entry1", "en")
             assert result == "Hello, World!"
@@ -153,7 +153,7 @@ class TestTranslaasClientGetEntry:
         )
 
         with patch.object(
-            client._http_client, "request", new_callable=AsyncMock, return_value=mock_response
+            client._http_client, "get", new_callable=AsyncMock, return_value=mock_response
         ):
             result = await client.get_entry("group1", "entry1", "en", number=1.0)
             assert result == "1 item"
@@ -168,7 +168,7 @@ class TestTranslaasClientGetEntry:
         )
 
         with patch.object(
-            client._http_client, "request", new_callable=AsyncMock, return_value=mock_response
+            client._http_client, "get", new_callable=AsyncMock, return_value=mock_response
         ):
             result = await client.get_entry("group1", "entry1", "en", parameters={"name": "John"})
             assert result == "Hello, John!"
@@ -219,7 +219,7 @@ class TestTranslaasClientGetEntry:
         )
 
         with patch.object(
-            client._http_client, "request", new_callable=AsyncMock, return_value=mock_response
+            client._http_client, "get", new_callable=AsyncMock, return_value=mock_response
         ):
             with pytest.raises(TranslaasApiException) as exc_info:
                 await client.get_entry("group1", "entry1", "en")
@@ -230,7 +230,7 @@ class TestTranslaasClientGetEntry:
         """Test get_entry with network error."""
         with patch.object(
             client._http_client,
-            "request",
+            "get",
             new_callable=AsyncMock,
             side_effect=httpx.ConnectError("Connection failed"),
         ):
@@ -242,7 +242,7 @@ class TestTranslaasClientGetEntry:
         """Test get_entry with timeout."""
         with patch.object(
             client._http_client,
-            "request",
+            "get",
             new_callable=AsyncMock,
             side_effect=httpx.TimeoutException("Timeout"),
         ):
@@ -264,7 +264,7 @@ class TestTranslaasClientGetGroup:
         )
 
         with patch.object(
-            client._http_client, "request", new_callable=AsyncMock, return_value=mock_response
+            client._http_client, "get", new_callable=AsyncMock, return_value=mock_response
         ):
             result = await client.get_group("project1", "group1", "en")
             assert isinstance(result, TranslationGroup)
@@ -282,7 +282,7 @@ class TestTranslaasClientGetGroup:
         )
 
         with patch.object(
-            client._http_client, "request", new_callable=AsyncMock, return_value=mock_response
+            client._http_client, "get", new_callable=AsyncMock, return_value=mock_response
         ):
             result = await client.get_group("project1", "group1", "en", format="json")
             assert isinstance(result, TranslationGroup)
@@ -336,7 +336,7 @@ class TestTranslaasClientGetGroup:
         )
 
         with patch.object(
-            client._http_client, "request", new_callable=AsyncMock, return_value=mock_response
+            client._http_client, "get", new_callable=AsyncMock, return_value=mock_response
         ):
             with pytest.raises(TranslaasApiException):
                 await client.get_group("project1", "group1", "en")
@@ -356,7 +356,7 @@ class TestTranslaasClientGetProject:
         )
 
         with patch.object(
-            client._http_client, "request", new_callable=AsyncMock, return_value=mock_response
+            client._http_client, "get", new_callable=AsyncMock, return_value=mock_response
         ):
             result = await client.get_project("project1", "en")
             assert isinstance(result, TranslationProject)
@@ -417,7 +417,7 @@ class TestTranslaasClientGetProjectLocales:
         )
 
         with patch.object(
-            client._http_client, "request", new_callable=AsyncMock, return_value=mock_response
+            client._http_client, "get", new_callable=AsyncMock, return_value=mock_response
         ):
             result = await client.get_project_locales("project1")
             assert isinstance(result, ProjectLocales)
@@ -434,7 +434,7 @@ class TestTranslaasClientGetProjectLocales:
         )
 
         with patch.object(
-            client._http_client, "request", new_callable=AsyncMock, return_value=mock_response
+            client._http_client, "get", new_callable=AsyncMock, return_value=mock_response
         ):
             result = await client.get_project_locales("project1")
             assert isinstance(result, ProjectLocales)
@@ -464,7 +464,7 @@ class TestTranslaasClientGetProjectLocales:
         )
 
         with patch.object(
-            client._http_client, "request", new_callable=AsyncMock, return_value=mock_response
+            client._http_client, "get", new_callable=AsyncMock, return_value=mock_response
         ):
             with pytest.raises(TranslaasApiException):
                 await client.get_project_locales("project1")
@@ -534,7 +534,7 @@ class TestTranslaasClientErrorHandling:
         """Test that cancellation is properly propagated."""
         with patch.object(
             client._http_client,
-            "request",
+            "get",
             new_callable=AsyncMock,
             side_effect=asyncio.CancelledError(),
         ):
