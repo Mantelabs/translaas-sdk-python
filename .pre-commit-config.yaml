@@ -59,7 +59,8 @@ repos:
       - id: pytest
         name: pytest
         # Allow exit code 5 (no tests) to pass - works with Git Bash on Windows
-        entry: bash -c 'pytest || test $? -eq 5'
+        # Use python -m pytest to ensure pytest is found in the environment
+        entry: bash -c 'python -m pytest || test $? -eq 5'
         language: system
         types: [python]
         pass_filenames: false
