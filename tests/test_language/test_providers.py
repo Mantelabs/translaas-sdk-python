@@ -192,20 +192,22 @@ class TestCultureLanguageProvider:
     async def test_invalid_locale_format(self) -> None:
         """Test handling of invalid locale format."""
         with patch("locale.getdefaultlocale", return_value=("invalid", None)):
-            provider = CultureLanguageProvider()
-            result = await provider.get_language()
+            with patch("locale.getlocale", return_value=(None, None)):
+                provider = CultureLanguageProvider()
+                result = await provider.get_language()
 
-            # Should return None for invalid format
-            assert result is None
+                # Should return None for invalid format
+                assert result is None
 
     @pytest.mark.asyncio
     async def test_locale_exception_handling(self) -> None:
         """Test graceful handling of locale exceptions."""
         with patch("locale.getdefaultlocale", side_effect=ValueError("Invalid locale")):
-            provider = CultureLanguageProvider()
-            result = await provider.get_language()
+            with patch("locale.getlocale", return_value=(None, None)):
+                provider = CultureLanguageProvider()
+                result = await provider.get_language()
 
-            assert result is None
+                assert result is None
 
 
 class TestDefaultLanguageProvider:
