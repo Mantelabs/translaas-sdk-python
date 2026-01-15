@@ -226,6 +226,13 @@ Red → Green → Refactor
    - Tests follow naming convention: `test_{method_name}_{scenario}_{expected_behavior}`
 6. **Run the build** to ensure everything builds:
    ```bash
+   # Linux/macOS
+   ./scripts/build.sh
+
+   # Windows (PowerShell)
+   .\scripts\build.ps1
+
+   # Or manually
    python -m build
    ```
 7. **Run type checking** to ensure type hints are correct:
@@ -413,6 +420,237 @@ ruff check .
 black translaas/ tests/
 ```
 
+## Building and Packaging
+
+### Building the Package
+
+The Translaas SDK uses the `build` tool (PEP 517/518) for building distribution packages. The build system is configured in `pyproject.toml`.
+
+#### Quick Build
+
+```bash
+# Linux/macOS
+./scripts/build.sh
+
+# Windows (PowerShell)
+.\scripts\build.ps1
+
+# Or manually
+python -m build
+```
+
+This will create:
+- **Wheel** (`dist/translaas-*.whl`) - Binary distribution (recommended)
+- **Source Distribution** (`dist/translaas-*.tar.gz`) - Source code distribution
+
+#### Build Requirements
+
+- Python 3.8+
+- `build` tool (installed automatically by scripts or via `pip install build`)
+- `setuptools` and `wheel` (specified in `pyproject.toml`)
+
+#### Verifying the Build
+
+After building, verify the package:
+
+```bash
+# Check package metadata
+python -m twine check dist/*
+
+# Install and test locally
+pip install dist/translaas-*.whl
+python -c "import translaas; print(translaas.__version__)"
+```
+
+### Package Structure
+
+The package includes:
+- All modules in `translaas/` directory
+- Type stubs (`py.typed` marker file)
+- Package metadata from `pyproject.toml`
+
+### Distribution Files
+
+Distribution files are created in the `dist/` directory:
+- `translaas-{version}-py3-none-any.whl` - Universal wheel (works on all platforms)
+- `translaas-{version}.tar.gz` - Source distribution
+
+**Note:** The `dist/` directory is gitignored and should not be committed.
+
+### Publishing to PyPI
+
+See the [Version Release Process](#version-release-process) section for detailed publishing instructions.
+
+#### PyPI Account Setup
+
+**Step 1: Create a PyPI Account**
+
+1. Go to [https://pypi.org/account/register/](https://pypi.org/account/register/)
+2. Fill in your details:
+   - Username (must be unique)
+   - Email address
+   - Password
+3. Verify your email address
+4. Complete your profile (optional but recommended)
+
+**Step 2: Enable Two-Factor Authentication (2FA)**
+
+**Highly recommended** for security:
+
+1. Log in to [PyPI](https://pypi.org)
+2. Go to **Account settings** → **Security**
+3. Click **Add 2FA** and follow the instructions
+4. Save your recovery codes in a secure location
+
+**Step 3: Create an API Token**
+
+API tokens are preferred over passwords for security:
+
+1. Log in to [PyPI](https://pypi.org)
+2. Go to **Account settings** → **API tokens**
+3. Click **Add API token**
+4. Enter a name (e.g., "translaas-sdk-python")
+5. Select scope:
+   - **Entire account** - Can publish any project (use for organization accounts)
+   - **Project: translaas** - Can only publish the translaas project (recommended)
+6. Click **Add token**
+7. **Copy the token immediately** - it starts with `pypi-` and won't be shown again
+8. Store it securely (password manager recommended)
+
+**Step 4: Configure Credentials for Manual Publishing**
+
+For manual publishing using the scripts, configure credentials:
+
+**Option A: Using `~/.pypirc` file (Linux/macOS/Windows)**
+
+Create or edit `~/.pypirc` (or `%USERPROFILE%\.pypirc` on Windows):
+
+```ini
+[pypi]
+username = __token__
+password = pypi-xxxxxxxxxxxxx  # Your API token here
+
+[testpypi]
+username = __token__
+password = pypi-xxxxxxxxxxxxx  # Your Test PyPI API token (if different)
+```
+
+**Option B: Using Environment Variables**
+
+```bash
+# Linux/macOS
+export TWINE_USERNAME=__token__
+export TWINE_PASSWORD=pypi-xxxxxxxxxxxxx
+
+# Windows (PowerShell)
+$env:TWINE_USERNAME = "__token__"
+$env:TWINE_PASSWORD = "pypi-xxxxxxxxxxxxx"
+
+# Windows (Command Prompt)
+set TWINE_USERNAME=__token__
+set TWINE_PASSWORD=pypi-xxxxxxxxxxxxx
+```
+
+**Note:** When using API tokens, always use `__token__` as the username and the full token (starting with `pypi-`) as the password.
+
+#### Configuring PyPI Trusted Publishing in GitHub
+
+**Trusted Publishing** allows GitHub Actions to publish to PyPI without storing API tokens as secrets. This is more secure and is the recommended approach.
+
+**Step 1: Create GitHub Environment**
+
+1. Go to your GitHub repository: `https://github.com/YOUR_USERNAME/translaas-sdk-python`
+2. Navigate to **Settings** → **Environments** → **New environment**
+3. Environment name: `pypi`
+4. Click **Configure environment**
+5. Under **Deployment branches**, select:
+   - ✅ **Selected branches**: Choose `main` (or your default branch)
+   - Or ✅ **All branches** (for testing purposes)
+6. Click **Save protection rules**
+
+**Step 2: Set Up Trusted Publishing on PyPI**
+
+1. Log in to [PyPI](https://pypi.org)
+2. Go to **Account settings** → **Publishing** → **Add a new pending publisher**
+3. Fill in the form:
+   - **PyPI project name**: `translaas` (must match your package name in `pyproject.toml`)
+   - **Owner**: Select your GitHub username or organization
+   - **Repository name**: `translaas-sdk-python` (or your repository name)
+   - **Workflow filename**: `.github/workflows/release.yml` (must match exactly)
+   - **Environment name**: `pypi` (must match the GitHub Environment name)
+4. Click **Add**
+5. The publisher will show as **Pending** until the first workflow run
+
+**Step 3: Verify GitHub Repository Settings**
+
+1. Go to your GitHub repository: `https://github.com/YOUR_USERNAME/translaas-sdk-python`
+2. Navigate to **Settings** → **Actions** → **General**
+3. Under **Workflow permissions**, ensure:
+   - ✅ **Read and write permissions** is selected (or **Read repository contents and packages permissions**)
+   - ✅ **Allow GitHub Actions to create and approve pull requests** (if needed)
+4. Scroll down and click **Save**
+
+**Step 4: Test Trusted Publishing**
+
+1. Create a test release or use workflow dispatch:
+   - Go to **Actions** → **Release** workflow
+   - Click **Run workflow**
+   - Select branch (usually `main`)
+   - Check **Publish to PyPI** (or **Publish to Test PyPI** for testing)
+   - Click **Run workflow**
+2. Monitor the workflow run:
+   - The workflow will build the package
+   - When publishing, PyPI will verify the trusted publisher
+   - If successful, the publisher status will change from **Pending** to **Active**
+3. Check PyPI:
+   - Go to [https://pypi.org/project/translaas/](https://pypi.org/project/translaas/)
+   - Verify your package appears
+
+**Step 5: Verify Trusted Publisher Status**
+
+1. Go back to PyPI → **Account settings** → **Publishing**
+2. Your publisher should now show as **Active** (green checkmark)
+3. You can see publishing history and revoke access if needed
+
+#### Troubleshooting Trusted Publishing
+
+**Issue: Publisher shows as "Pending"**
+
+- **Solution**: Run the workflow once. The publisher activates on first successful run.
+
+**Issue: "403 Forbidden" error**
+
+- **Solution**: Check that:
+  - Repository name matches exactly
+  - Workflow filename matches exactly (`.github/workflows/release.yml`)
+  - Environment name matches exactly (`pypi` in both GitHub and PyPI)
+  - GitHub Environment exists and is configured correctly
+  - Workflow has `permissions: id-token: write`
+  - GitHub Actions has write permissions enabled
+
+**Issue: "Project name mismatch"**
+
+- **Solution**: Ensure the project name in PyPI trusted publisher matches the `name` field in `pyproject.toml` (should be `translaas`)
+
+**Issue: Workflow not triggering**
+
+- **Solution**: Check that:
+  - The workflow file is in `.github/workflows/` directory
+  - The workflow file has correct YAML syntax
+  - The trigger conditions are met (release published or workflow dispatch)
+
+#### Test PyPI Setup (Optional)
+
+For testing releases before publishing to production PyPI:
+
+1. Create a Test PyPI account at [https://test.pypi.org/account/register/](https://test.pypi.org/account/register/)
+2. Create an API token (same process as production PyPI)
+3. Set up trusted publishing (same process as production PyPI)
+4. Use the workflow dispatch with **Publish to Test PyPI** checked
+5. Test installation: `pip install --index-url https://test.pypi.org/simple/ translaas`
+
+**Note:** Test PyPI is separate from production PyPI. You need separate accounts and tokens.
+
 ## Additional Resources
 
 - [SDK Guidelines](.cursor/rules/translaas-sdk-rules.mdc) - Comprehensive development guidelines including TDD practices
@@ -434,9 +672,11 @@ We follow [Semantic Versioning](https://semver.org/) (SemVer):
 
 #### Version Location
 
-Version is managed in:
-- `pyproject.toml` - `[project]` section, `version` field
-- Or `translaas/__init__.py` - `__version__` variable
+Version is managed in two places (both must be kept in sync):
+- `pyproject.toml` - `[project]` section, `version` field (primary source for build)
+- `translaas/__version__.py` - `__version__` variable (used at runtime)
+
+**Important:** When updating the version, update both files to keep them synchronized.
 
 #### When to Update Version
 
@@ -454,15 +694,55 @@ Update version for:
 
 #### Version Release Process
 
-**Manual Process:**
+**Automated Release (Recommended):**
 
-1. **Update version** in `pyproject.toml` or `__init__.py`:
-   ```python
+The project uses GitHub Actions for automated releases. When you create a GitHub release, the workflow will automatically:
+1. Build the package
+2. Check the package
+3. Publish to PyPI
+
+**Steps:**
+1. **Update version** in `pyproject.toml` and `translaas/__version__.py`:
+   ```toml
    # pyproject.toml
    [project]
    version = "1.2.0"
+   ```
+   ```python
+   # translaas/__version__.py
+   __version__ = "1.2.0"
+   ```
 
-   # Or __init__.py
+2. **Update CHANGELOG.md** with release notes
+
+3. **Commit and push changes**:
+   ```bash
+   git add pyproject.toml translaas/__version__.py CHANGELOG.md
+   git commit -m "chore: bump version to 1.2.0"
+   git push
+   ```
+
+4. **Create a GitHub release**:
+   - Go to the repository's Releases page
+   - Click "Create a new release"
+   - Tag: `v1.2.0` (must match version with 'v' prefix)
+   - Title: `Version 1.2.0`
+   - Description: Copy from CHANGELOG.md
+   - Click "Publish release"
+   - The GitHub Actions workflow will automatically build and publish to PyPI
+
+**Manual Release Process:**
+
+If you need to build and publish manually:
+
+1. **Update version** in `pyproject.toml` and `translaas/__version__.py`:
+   ```toml
+   # pyproject.toml
+   [project]
+   version = "1.2.0"
+   ```
+   ```python
+   # translaas/__version__.py
    __version__ = "1.2.0"
    ```
 
@@ -470,12 +750,26 @@ Update version for:
 
 3. **Build the package**:
    ```bash
+   # Linux/macOS
+   ./scripts/build.sh
+
+   # Windows (PowerShell)
+   .\scripts\build.ps1
+
+   # Or manually
    python -m build
    ```
 
 4. **Test the build**:
    ```bash
+   # Install from wheel
    pip install dist/translaas-*.whl
+
+   # Or install from source distribution
+   pip install dist/translaas-*.tar.gz
+
+   # Verify installation
+   python -c "import translaas; print(translaas.__version__)"
    ```
 
 5. **Tag the release**:
@@ -486,8 +780,23 @@ Update version for:
 
 6. **Publish to PyPI** (if you have permissions):
    ```bash
+   # Linux/macOS - PyPI
+   ./scripts/publish.sh pypi
+
+   # Linux/macOS - Test PyPI
+   ./scripts/publish.sh testpypi
+
+   # Windows (PowerShell) - PyPI
+   .\scripts\publish.ps1 pypi
+
+   # Windows (PowerShell) - Test PyPI
+   .\scripts\publish.ps1 testpypi
+
+   # Or manually
    twine upload dist/*
    ```
+
+**Note:** For Test PyPI, you may need to configure credentials separately. Test PyPI is useful for testing the release process before publishing to production PyPI.
 
 #### Pre-Release Versions
 
