@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ welcome }}</title>
+</head>
+<body>
+    <h1>{{ welcome }}</h1>
+    <p>{{ greeting }}</p>
+    <hr>
+    <h2>Template Tag Example:</h2>
+    {% load translaas_tags %}
+    <p>{% translaas "common" "welcome" %}</p>
+    <p>{% translaas "messages" "greeting" name="Template User" %}</p>
+</body>
+</html>
