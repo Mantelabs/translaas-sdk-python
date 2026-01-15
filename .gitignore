@@ -155,3 +155,6 @@ Thumbs.db
 .ruff_cache/
 
 .docs
+
+# PyPI credentials (contains API tokens)
+.pypirc
