@@ -12,7 +12,7 @@ repos:
     hooks:
       - id: ruff-format
         # ruff-format is black-compatible, so we use it instead of black
-        stages: [commit]
+        stages: [pre-commit]
 
   # Ruff linting - runs on push
   - repo: https://github.com/astral-sh/ruff-pre-commit
@@ -52,7 +52,7 @@ repos:
         # Removed types-all as it includes packages that don't exist (types-pkg-resources)
         # Add specific type stubs as needed: additional_dependencies: [types-httpx]
         args: [--ignore-missing-imports, --no-strict-optional]
-        exclude: ^tests/
+        exclude: ^(tests/|examples/)
         stages: [pre-push]
 
   # Run tests before push
