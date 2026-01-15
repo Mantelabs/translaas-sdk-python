@@ -3,6 +3,7 @@
 from unittest.mock import Mock, patch
 
 import pytest
+from django.test import override_settings
 
 from translaas.extensions.django import DjangoRequestLanguageProvider, get_translaas_service, t
 
@@ -85,50 +86,48 @@ class TestDjangoHelpers:
     """Tests for Django helper functions."""
 
     @patch("translaas.extensions.django.asyncio")
+    @override_settings(
+        TRANSLAAS_API_KEY="test-key",
+        TRANSLAAS_BASE_URL="https://api.test.com",
+        TRANSLAAS_CACHE_MODE=None,
+        TRANSLAAS_TIMEOUT=None,
+        TRANSLAAS_CACHE_ABSOLUTE_EXPIRATION=None,
+        TRANSLAAS_CACHE_SLIDING_EXPIRATION=None,
+        TRANSLAAS_DEFAULT_LANGUAGE=None,
+    )
     def test_get_translaas_service(self, mock_asyncio: Mock) -> None:
         """Test get_translaas_service function."""
         request = Mock()
         request.LANGUAGE_CODE = "en"
 
-        # Mock Django settings
-        with patch("django.conf.settings") as mock_settings:
-            mock_settings.TRANSLAAS_API_KEY = "test-key"
-            mock_settings.TRANSLAAS_BASE_URL = "https://api.test.com"
-            mock_settings.TRANSLAAS_CACHE_MODE = None
-            mock_settings.TRANSLAAS_TIMEOUT = None
-            mock_settings.TRANSLAAS_CACHE_ABSOLUTE_EXPIRATION = None
-            mock_settings.TRANSLAAS_CACHE_SLIDING_EXPIRATION = None
-            mock_settings.TRANSLAAS_DEFAULT_LANGUAGE = None
+        service = get_translaas_service(request)
 
-            service = get_translaas_service(request)
-
-            assert service is not None
-            assert service.options.api_key == "test-key"
-            assert service.options.base_url == "https://api.test.com"
+        assert service is not None
+        assert service.options.api_key == "test-key"
+        assert service.options.base_url == "https://api.test.com"
 
     @patch("translaas.extensions.django.asyncio")
+    @override_settings(
+        TRANSLAAS_API_KEY="test-key",
+        TRANSLAAS_BASE_URL="https://api.test.com",
+        TRANSLAAS_CACHE_MODE=None,
+        TRANSLAAS_TIMEOUT=None,
+        TRANSLAAS_CACHE_ABSOLUTE_EXPIRATION=None,
+        TRANSLAAS_CACHE_SLIDING_EXPIRATION=None,
+        TRANSLAAS_DEFAULT_LANGUAGE=None,
+    )
     def test_t_function(self, mock_asyncio: Mock) -> None:
         """Test t() helper function."""
         request = Mock()
         request.LANGUAGE_CODE = "en"
 
-        # Mock Django settings
-        with patch("django.conf.settings") as mock_settings:
-            mock_settings.TRANSLAAS_API_KEY = "test-key"
-            mock_settings.TRANSLAAS_BASE_URL = "https://api.test.com"
-            mock_settings.TRANSLAAS_CACHE_MODE = None
-            mock_settings.TRANSLAAS_TIMEOUT = None
-            mock_settings.TRANSLAAS_CACHE_ABSOLUTE_EXPIRATION = None
-            mock_settings.TRANSLAAS_CACHE_SLIDING_EXPIRATION = None
-            mock_settings.TRANSLAAS_DEFAULT_LANGUAGE = None
+        # Mock async execution
+        mock_loop = Mock()
+        mock_loop.is_running.return_value = False
+        mock_loop.run_until_complete.return_value = "translated"
+        mock_asyncio.get_event_loop.return_value = mock_loop
 
-            # Mock async execution
-            mock_loop = Mock()
-            mock_loop.is_running.return_value = False
-            mock_loop.run_until_complete.return_value = "translated"
-            mock_asyncio.get_event_loop.return_value = mock_loop
+        result = t("group", "entry", request=request)
 
-            result = t("group", "entry", request=request)
-
-            assert result == "translated"
-            mock_loop.run_until_complete.assert_called_once()
+        assert result == "translated"
+        mock_loop.run_until_complete.assert_called_once()
