@@ -6,7 +6,11 @@ helper methods, and request language providers for using Translaas in FastAPI ap
 
 from typing import TYPE_CHECKING, Optional
 
-from fastapi import Request
+try:
+    from fastapi import Request
+except ImportError:
+    # FastAPI is an optional dependency - only raise error when actually used
+    Request = None  # type: ignore[assignment,misc]
 
 from translaas.language.providers import RequestLanguageProvider
 from translaas.language.resolver import LanguageResolver
@@ -14,7 +18,7 @@ from translaas.models.protocols import ILanguageProvider
 from translaas.service import TranslaasService
 
 if TYPE_CHECKING:
-    from fastapi import FastAPI
+    from fastapi import FastAPI, Request
 
 
 class FastAPIRequestLanguageProvider(ILanguageProvider):
@@ -123,6 +127,12 @@ class Translaas:
             app: The FastAPI application instance.
             options: Optional TranslaasOptions instance. If not provided, will be read from app.state.
         """
+        if Request is None:
+            raise ImportError(
+                "FastAPI is required for translaas.extensions.fastapi. "
+                "Install it with: pip install translaas[fastapi]"
+            )
+
         self.app = app
 
         # Get options from parameter or app state
@@ -137,7 +147,7 @@ class Translaas:
         app.state.translaas_options = options
 
         # Create dependency function
-        def _get_translaas_service(request: Request) -> TranslaasService:
+        def _get_translaas_service(request: "Request") -> TranslaasService:
             """Create a TranslaasService instance for the current request.
 
             Args:
@@ -153,7 +163,7 @@ class Translaas:
         app.state.get_translaas_service = _get_translaas_service
 
 
-def get_translaas_service(request: Request) -> TranslaasService:
+def get_translaas_service(request: "Request") -> TranslaasService:
     """Dependency function to get TranslaasService instance.
 
     This function should be used as a FastAPI dependency to inject
@@ -182,6 +192,12 @@ def get_translaas_service(request: Request) -> TranslaasService:
             return {"message": translation}
         ```
     """
+    if Request is None:
+        raise ImportError(
+            "FastAPI is required for translaas.extensions.fastapi. "
+            "Install it with: pip install translaas[fastapi]"
+        )
+
     if not hasattr(request.app.state, "get_translaas_service"):
         raise RuntimeError(
             "Translaas extension not initialized. Call translaas.init_app(app, options) first."

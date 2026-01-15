@@ -43,6 +43,10 @@ dev = [
     "build>=0.10.0",
     "twine>=4.0.0",
     "pre-commit>=3.5.0",
+    # Framework dependencies needed for tests
+    "flask>=2.0.0",
+    "fastapi>=0.100.0",
+    "django>=4.0.0",
 ]
 flask = [
     "flask>=2.0.0",
