@@ -70,7 +70,10 @@ Repository = "https://github.com/acuencadev/translaas-sdk-python"
 Issues = "https://github.com/acuencadev/translaas-sdk-python/issues"
 
 [tool.setuptools]
-packages = ["translaas"]
+# Automatically discover all packages
+packages = {find = {}}
+# Or explicitly specify if needed:
+# packages = ["translaas"]
 
 [tool.setuptools.package-data]
 translaas = ["py.typed"]
