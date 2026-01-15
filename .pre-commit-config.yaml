@@ -1,45 +1,50 @@
 # Pre-commit hooks configuration
 # Install: pip install pre-commit
-# Setup: pre-commit install
-# Setup with pre-push: pre-commit install --hook-type pre-commit --hook-type pre-push
+# Setup: pre-commit install --hook-type pre-commit --hook-type pre-push
 #
-# For partial commits (e.g., committing only feature files, tests, or docs separately):
-#   Option 1: Skip specific hooks: SKIP=ruff,ruff-format git commit -m "message"
-#   Option 2: Skip all hooks: git commit --no-verify -m "message"
-#
-# Note: Hooks only run on staged files by default, but some checks may still fail
-# if they require consistency across the entire codebase.
+# Formatting runs on commit (pre-commit stage)
+# All validation runs on push (pre-push stage)
 
 repos:
-  # Ruff for linting and formatting (ruff-format is black-compatible)
+  # Ruff formatting - runs on commit
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.6
+    hooks:
+      - id: ruff-format
+        # ruff-format is black-compatible, so we use it instead of black
+        stages: [commit]
+
+  # Ruff linting - runs on push
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.1.6
     hooks:
       - id: ruff
         args: [--fix]
-        # Removed --exit-non-zero-on-fix to allow partial commits
-        # Files are still fixed, but won't fail if other files have issues
-      - id: ruff-format
-        # ruff-format is black-compatible, so we use it instead of black
+        stages: [pre-push]
 
-  # General file checks
+  # General file checks - runs on push
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.6.0
     hooks:
       - id: trailing-whitespace
+        stages: [pre-push]
       - id: end-of-file-fixer
+        stages: [pre-push]
       - id: check-yaml
+        stages: [pre-push]
       - id: check-toml
+        stages: [pre-push]
       - id: check-json
+        stages: [pre-push]
       - id: check-added-large-files
         args: ['--maxkb=500']
+        stages: [pre-push]
       - id: check-merge-conflict
+        stages: [pre-push]
       - id: debug-statements
+        stages: [pre-push]
 
-  # Type checking with mypy
-  # NOTE: Disabled by default in pre-commit as it can be slow
-  # Run manually: mypy translaas/
-  # Or enable by removing 'stages: []' below
+  # Type checking with mypy - runs on push
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.8.0
     hooks:
@@ -48,8 +53,7 @@ repos:
         # Add specific type stubs as needed: additional_dependencies: [types-httpx]
         args: [--ignore-missing-imports, --no-strict-optional]
         exclude: ^tests/
-        # Disabled in pre-commit - run manually or in CI for better performance
-        stages: []
+        stages: [pre-push]
 
   # Run tests before push
   # Note: Exit code 5 (no tests collected) is allowed to pass
