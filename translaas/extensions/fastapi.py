@@ -10,7 +10,7 @@ try:
     from fastapi import Request
 except ImportError:
     # FastAPI is an optional dependency - only raise error when actually used
-    Request = None  # type: ignore[assignment]
+    Request = None
 
 from translaas.language.providers import RequestLanguageProvider
 from translaas.language.resolver import LanguageResolver
