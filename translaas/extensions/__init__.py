@@ -15,9 +15,9 @@ try:
         t,
     )
 except ImportError:
-    DjangoRequestLanguageProvider = None  # type: ignore[assignment,misc]
-    get_translaas_service = None  # type: ignore[assignment,misc]
-    t = None  # type: ignore[assignment,misc]
+    DjangoRequestLanguageProvider = None  # type: ignore[assignment]
+    get_translaas_service = None  # type: ignore[assignment]
+    t = None  # type: ignore[assignment]
 
 # FastAPI imports (optional dependency)
 try:
@@ -27,9 +27,9 @@ try:
         get_translaas_service as get_fastapi_translaas_service,
     )
 except ImportError:
-    FastAPIRequestLanguageProvider = None  # type: ignore[assignment,misc]
-    FastAPITranslaas = None  # type: ignore[assignment,misc]
-    get_fastapi_translaas_service = None  # type: ignore[assignment,misc]
+    FastAPIRequestLanguageProvider = None  # type: ignore[assignment]
+    FastAPITranslaas = None  # type: ignore[assignment]
+    get_fastapi_translaas_service = None  # type: ignore[assignment]
 
 # Flask imports (optional dependency)
 try:
@@ -38,8 +38,8 @@ try:
         Translaas as FlaskTranslaas,
     )
 except ImportError:
-    FlaskRequestLanguageProvider = None  # type: ignore[assignment,misc]
-    FlaskTranslaas = None  # type: ignore[assignment,misc]
+    FlaskRequestLanguageProvider = None  # type: ignore[assignment]
+    FlaskTranslaas = None  # type: ignore[assignment]
 
 __all__ = [
     # Flask

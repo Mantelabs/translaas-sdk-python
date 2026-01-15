@@ -115,7 +115,7 @@ class Translaas:
             app: Optional FastAPI application instance. If provided, init_app is called automatically.
         """
         self.app: Optional["FastAPI"] = None
-        self._options = None
+        self._options: Optional[object] = None
 
         if app is not None:
             self.init_app(app)
@@ -204,4 +204,17 @@ def get_translaas_service(request: "Request") -> TranslaasService:
         )
 
     get_service_func = request.app.state.get_translaas_service
-    return get_service_func(request)
+    result = get_service_func(request)
+    assert isinstance(result, TranslaasService)
+    return result
+
+
+# Alias for backward compatibility and easier imports
+FastAPITranslaas = Translaas
+
+__all__ = [
+    "FastAPIRequestLanguageProvider",
+    "Translaas",
+    "FastAPITranslaas",
+    "get_translaas_service",
+]

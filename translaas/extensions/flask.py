@@ -109,7 +109,7 @@ class Translaas:
             app: Optional Flask application instance. If provided, init_app is called automatically.
         """
         self.app: Optional["Flask"] = None
-        self._options = None
+        self._options: Optional[object] = None
 
         if app is not None:
             self.init_app(app)
@@ -140,10 +140,10 @@ class Translaas:
         self._options = options
 
         # Service will be created per-request to access current request context
-        self.service = None
+        self.service: Optional[TranslaasService] = None
 
         # Register template filter
-        @app.template_filter("translaas")
+        @app.template_filter("translaas")  # type: ignore[no-untyped-call]
         def translaas_filter(group: str, entry: str, **kwargs: str) -> str:
             """Template filter for translations.
 
@@ -156,7 +156,13 @@ class Translaas:
                 The translated string.
             """
             lang = kwargs.pop("lang", None)
-            number = kwargs.pop("number", None)
+            number_str = kwargs.pop("number", None)
+            number: Optional[float] = None
+            if number_str is not None:
+                try:
+                    number = float(number_str)
+                except (ValueError, TypeError):
+                    number = None
             parameters = kwargs if kwargs else None
             return self.t(group, entry, lang=lang, number=number, parameters=parameters)
 
@@ -271,3 +277,13 @@ class Translaas:
                 return await service.t(group, entry, lang)
             else:
                 return await service.t(group, entry)
+
+
+# Alias for backward compatibility and easier imports
+FlaskTranslaas = Translaas
+
+__all__ = [
+    "FlaskRequestLanguageProvider",
+    "Translaas",
+    "FlaskTranslaas",
+]
