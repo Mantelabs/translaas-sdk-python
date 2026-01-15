@@ -17,11 +17,17 @@ from translaas.extensions.django import (
 )
 from translaas.extensions.fastapi import (
     FastAPIRequestLanguageProvider,
+)
+from translaas.extensions.fastapi import (
     Translaas as FastAPITranslaas,
+)
+from translaas.extensions.fastapi import (
     get_translaas_service as get_fastapi_translaas_service,
 )
 from translaas.extensions.flask import (
     FlaskRequestLanguageProvider,
+)
+from translaas.extensions.flask import (
     Translaas as FlaskTranslaas,
 )
 
