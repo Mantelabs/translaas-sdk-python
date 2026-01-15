@@ -18,7 +18,7 @@ from translaas.extensions.django import t
 register = template.Library()
 
 
-@register.simple_tag(takes_context=True)  # type: ignore[no-untyped-call]
+@register.simple_tag(takes_context=True)  # type: ignore[misc]
 def translaas(
     context: dict,
     group: str,

@@ -1,5 +1,7 @@
 """Framework integrations and extensions for the Translaas SDK."""
 
+from typing import TYPE_CHECKING
+
 from translaas.extensions.config import (
     django_config,
     flask_config,
@@ -7,39 +9,21 @@ from translaas.extensions.config import (
     from_env,
 )
 
-# Django imports (optional dependency)
-try:
-    from translaas.extensions.django import (
-        DjangoRequestLanguageProvider,
-        get_translaas_service,
-        t,
-    )
-except ImportError:
-    DjangoRequestLanguageProvider = None  # type: ignore[assignment]
-    get_translaas_service = None  # type: ignore[assignment]
-    t = None  # type: ignore[assignment]
-
-# FastAPI imports (optional dependency)
-try:
-    from translaas.extensions.fastapi import (
-        FastAPIRequestLanguageProvider,
-        Translaas as FastAPITranslaas,
-        get_translaas_service as get_fastapi_translaas_service,
-    )
-except ImportError:
-    FastAPIRequestLanguageProvider = None  # type: ignore[assignment]
-    FastAPITranslaas = None  # type: ignore[assignment]
-    get_fastapi_translaas_service = None  # type: ignore[assignment]
-
-# Flask imports (optional dependency)
-try:
-    from translaas.extensions.flask import (
-        FlaskRequestLanguageProvider,
-        Translaas as FlaskTranslaas,
-    )
-except ImportError:
-    FlaskRequestLanguageProvider = None  # type: ignore[assignment]
-    FlaskTranslaas = None  # type: ignore[assignment]
+# Import all extensions - they handle their own optional dependencies
+from translaas.extensions.django import (
+    DjangoRequestLanguageProvider,
+    get_translaas_service,
+    t,
+)
+from translaas.extensions.fastapi import (
+    FastAPIRequestLanguageProvider,
+    Translaas as FastAPITranslaas,
+    get_translaas_service as get_fastapi_translaas_service,
+)
+from translaas.extensions.flask import (
+    FlaskRequestLanguageProvider,
+    Translaas as FlaskTranslaas,
+)
 
 __all__ = [
     # Flask

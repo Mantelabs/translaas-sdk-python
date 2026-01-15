@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Dict, Optional
 
 from translaas.language.providers import RequestLanguageProvider
 from translaas.language.resolver import LanguageResolver
+from translaas.models.options import TranslaasOptions
 from translaas.models.protocols import ILanguageProvider
 from translaas.service import TranslaasService
 
@@ -109,12 +110,12 @@ class Translaas:
             app: Optional Flask application instance. If provided, init_app is called automatically.
         """
         self.app: Optional["Flask"] = None
-        self._options: Optional[object] = None
+        self._options: Optional[TranslaasOptions] = None
 
         if app is not None:
             self.init_app(app)
 
-    def init_app(self, app: "Flask", options: Optional[object] = None) -> None:
+    def init_app(self, app: "Flask", options: Optional[TranslaasOptions] = None) -> None:
         """Initialize the extension with a Flask application.
 
         Args:
@@ -143,7 +144,7 @@ class Translaas:
         self.service: Optional[TranslaasService] = None
 
         # Register template filter
-        @app.template_filter("translaas")  # type: ignore[no-untyped-call]
+        @app.template_filter("translaas")  # type: ignore[misc]
         def translaas_filter(group: str, entry: str, **kwargs: str) -> str:
             """Template filter for translations.
 

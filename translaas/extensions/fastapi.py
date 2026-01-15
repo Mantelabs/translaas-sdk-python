@@ -14,6 +14,7 @@ except ImportError:
 
 from translaas.language.providers import RequestLanguageProvider
 from translaas.language.resolver import LanguageResolver
+from translaas.models.options import TranslaasOptions
 from translaas.models.protocols import ILanguageProvider
 from translaas.service import TranslaasService
 
@@ -112,15 +113,12 @@ class Translaas:
         """Initialize the Translaas FastAPI extension.
 
         Args:
-            app: Optional FastAPI application instance. If provided, init_app is called automatically.
+            app: Optional FastAPI application instance. If provided, app is stored but init_app must be called separately with options.
         """
-        self.app: Optional["FastAPI"] = None
-        self._options: Optional[object] = None
+        self.app: Optional["FastAPI"] = app
+        self._options: Optional[TranslaasOptions] = None
 
-        if app is not None:
-            self.init_app(app)
-
-    def init_app(self, app: "FastAPI", options: Optional[object] = None) -> None:
+    def init_app(self, app: "FastAPI", options: Optional[TranslaasOptions] = None) -> None:
         """Initialize the extension with a FastAPI application.
 
         Args:
