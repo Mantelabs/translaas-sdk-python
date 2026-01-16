@@ -16,6 +16,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Examples directory structure
 - Version management system
 
+## [0.1.1] - 2025-01-16
+
+### Added
+- Comprehensive testing infrastructure setup
+- Shared test fixtures in `tests/conftest.py` (MockCacheProvider, options, client fixtures)
+- Test utilities in `tests/helpers.py` for creating mock objects and assertions
+- Test fixtures directory with sample JSON data files
+- Coverage reporting configuration with 80% minimum threshold
+- Integration and unit test markers for better test organization
+
+### Changed
+- Refactored existing tests to use shared fixtures from `conftest.py`
+- Enhanced pytest configuration with coverage reporting (term, HTML, XML formats)
+
 ## [0.1.0] - 2025-01-XX
 
 ### Added
@@ -23,5 +37,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Project structure and configuration files
 - Development environment setup scripts
 
-[Unreleased]: https://github.com/acuencadev/translaas-sdk-python/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/acuencadev/translaas-sdk-python/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/acuencadev/translaas-sdk-python/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/acuencadev/translaas-sdk-python/releases/tag/v0.1.0
