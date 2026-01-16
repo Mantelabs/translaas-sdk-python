@@ -143,6 +143,7 @@ def get_translaas_service(request: Optional["HttpRequest"] = None) -> TranslaasS
         cache_absolute_expiration=getattr(settings, "TRANSLAAS_CACHE_ABSOLUTE_EXPIRATION", None),
         cache_sliding_expiration=getattr(settings, "TRANSLAAS_CACHE_SLIDING_EXPIRATION", None),
         default_language=getattr(settings, "TRANSLAAS_DEFAULT_LANGUAGE", None),
+        verify=getattr(settings, "TRANSLAAS_VERIFY", True),
     )
 
     # Create language resolver if request is available

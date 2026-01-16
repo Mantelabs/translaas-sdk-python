@@ -136,6 +136,7 @@ class Translaas:
                 cache_absolute_expiration=app.config.get("TRANSLAAS_CACHE_ABSOLUTE_EXPIRATION"),
                 cache_sliding_expiration=app.config.get("TRANSLAAS_CACHE_SLIDING_EXPIRATION"),
                 default_language=app.config.get("TRANSLAAS_DEFAULT_LANGUAGE"),
+                verify=app.config.get("TRANSLAAS_VERIFY", True),
             )
 
         self._options = options

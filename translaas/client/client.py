@@ -88,6 +88,7 @@ class TranslaasClient(ITranslaasClient):
                 "Content-Type": "application/json",
             },
             timeout=timeout,
+            verify=self.options.verify,
         )
         return self
 
