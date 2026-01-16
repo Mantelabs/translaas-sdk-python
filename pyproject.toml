@@ -78,20 +78,6 @@ packages = {find = {}}
 [tool.setuptools.package-data]
 translaas = ["py.typed"]
 
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-python_files = ["test_*.py"]
-python_classes = ["Test*"]
-python_functions = ["test_*"]
-addopts = [
-    "--strict-markers",
-    "--strict-config",
-    "--verbose",
-]
-markers = [
-    "asyncio: marks tests as async (deselect with '-m \"not asyncio\"')",
-]
-asyncio_mode = "auto"
 
 [tool.coverage.run]
 source = ["translaas"]
@@ -110,6 +96,38 @@ exclude_lines = [
     "if TYPE_CHECKING:",
     "@abstractmethod",
 ]
+fail_under = 80
+precision = 2
+show_missing = true
+skip_covered = false
+
+[tool.coverage.report.branches]
+exclude = [
+    "if TYPE_CHECKING:",
+    "if __name__ == .__main__.:",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--verbose",
+    "--cov=translaas",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-report=xml",
+    "--cov-fail-under=80",
+]
+markers = [
+    "asyncio: marks tests as async (deselect with '-m \"not asyncio\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]
+asyncio_mode = "auto"
 
 [tool.mypy]
 python_version = "3.8"
