@@ -6,5 +6,7 @@ from . import views
 
 urlpatterns = [
     path("", views.index, name="index"),
-    path("about/", views.about, name="about"),
+    path(
+        "api/translations/<str:group>/<str:entry>/", views.api_translation, name="api_translation"
+    ),
 ]
