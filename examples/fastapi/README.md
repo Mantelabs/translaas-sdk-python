@@ -16,7 +16,7 @@ cp .env.example .env
 ## Running
 
 ```bash
-uvicorn main:app --reload
+uvicorn app:app --reload
 ```
 
 ## Features Demonstrated
