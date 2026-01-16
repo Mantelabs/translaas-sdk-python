@@ -3,7 +3,6 @@
 import asyncio
 import json
 from datetime import timedelta
-from typing import Dict, Optional
 from unittest.mock import AsyncMock, patch
 
 import httpx
@@ -15,58 +14,8 @@ from translaas.models.enums import CacheMode
 from translaas.models.options import TranslaasOptions
 from translaas.models.responses import ProjectLocales, TranslationGroup, TranslationProject
 
-
-class MockCacheProvider:
-    """Mock cache provider for testing."""
-
-    def __init__(self) -> None:
-        """Initialize mock cache provider."""
-        self._cache: Dict[str, str] = {}
-
-    def get(self, key: str) -> Optional[str]:
-        """Get value from cache."""
-        return self._cache.get(key)
-
-    def set(
-        self,
-        key: str,
-        value: str,
-        absolute_expiration_ms: Optional[int] = None,
-        sliding_expiration_ms: Optional[int] = None,
-    ) -> None:
-        """Set value in cache."""
-        self._cache[key] = value
-
-    def remove(self, key: str) -> None:
-        """Remove value from cache."""
-        self._cache.pop(key, None)
-
-    def clear(self) -> None:
-        """Clear cache."""
-        self._cache.clear()
-
-
-@pytest.fixture
-def options() -> TranslaasOptions:
-    """Create test options."""
-    return TranslaasOptions(
-        api_key="test-api-key",
-        base_url="https://api.test.com",
-    )
-
-
-@pytest.fixture
-def cache_provider() -> MockCacheProvider:
-    """Create mock cache provider."""
-    return MockCacheProvider()
-
-
-@pytest.fixture
-async def client(options: TranslaasOptions, cache_provider: MockCacheProvider) -> TranslaasClient:
-    """Create and return a TranslaasClient instance."""
-    client_instance = TranslaasClient(options, cache_provider=cache_provider)
-    async with client_instance:
-        yield client_instance
+# Import shared fixtures and utilities from conftest
+from tests.conftest import MockCacheProvider  # noqa: F401
 
 
 class TestTranslaasClientInitialization:
