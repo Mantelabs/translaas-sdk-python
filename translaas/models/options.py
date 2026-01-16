@@ -73,6 +73,7 @@ class TranslaasOptions:
         cache_sliding_expiration: Optional sliding expiration time for cache entries.
         offline_cache: Optional offline cache configuration.
         default_language: Optional default language code to use when not specified.
+        verify: Whether to verify SSL certificates. Defaults to True. Set to False for local development with self-signed certificates.
 
     Raises:
         ValueError: If api_key or base_url is empty or None.
@@ -86,6 +87,7 @@ class TranslaasOptions:
     cache_sliding_expiration: Optional[timedelta] = None
     offline_cache: Optional[OfflineCacheOptions] = None
     default_language: Optional[str] = None
+    verify: bool = True
 
     def __post_init__(self) -> None:
         """Validate configuration options after initialization.

@@ -3,6 +3,11 @@
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -16,22 +21,14 @@ ALLOWED_HOSTS = []
 
 # Application definition
 INSTALLED_APPS = [
-    "django.contrib.admin",
-    "django.contrib.auth",
-    "django.contrib.contenttypes",
-    "django.contrib.sessions",
-    "django.contrib.messages",
-    "django.contrib.staticfiles",
+    "django.contrib.staticfiles",  # For serving static files (CSS, JS)
     "myapp",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
-    "django.contrib.auth.middleware.AuthenticationMiddleware",
-    "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
@@ -46,8 +43,6 @@ TEMPLATES = [
             "context_processors": [
                 "django.template.context_processors.debug",
                 "django.template.context_processors.request",
-                "django.contrib.auth.context_processors.auth",
-                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
@@ -78,4 +73,5 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # Translaas Configuration
 TRANSLAAS_API_KEY = os.getenv("TRANSLAAS_API_KEY", "your-api-key-here")
 TRANSLAAS_BASE_URL = os.getenv("TRANSLAAS_BASE_URL", "https://api.translaas.com")
-TRANSLAAS_DEFAULT_LANGUAGE = "en"
+TRANSLAAS_DEFAULT_LANGUAGE = os.getenv("TRANSLAAS_DEFAULT_LANGUAGE", "en")
+TRANSLAAS_VERIFY = os.getenv("TRANSLAAS_VERIFY", "true").lower() == "true"

@@ -4,7 +4,7 @@ This module provides FastAPI-specific integrations including dependency injectio
 helper methods, and request language providers for using Translaas in FastAPI applications.
 """
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, AsyncGenerator, Optional
 
 try:
     from fastapi import Request
@@ -144,33 +144,41 @@ class Translaas:
         self._options = options
         app.state.translaas_options = options
 
-        # Create dependency function
-        def _get_translaas_service(request: "Request") -> TranslaasService:
-            """Create a TranslaasService instance for the current request.
+        # Create dependency function that properly manages async context manager lifecycle
+        async def _get_translaas_service(
+            request: "Request"
+        ) -> AsyncGenerator[TranslaasService, None]:
+            """Create and manage a TranslaasService instance for the current request.
+
+            This dependency properly manages the async context manager lifecycle
+            of the TranslaasService, ensuring the HTTP client is initialized and cleaned up.
 
             Args:
                 request: The FastAPI request object.
 
-            Returns:
+            Yields:
                 A TranslaasService instance configured for the current request.
             """
             language_resolver = LanguageResolver([FastAPIRequestLanguageProvider(request)])
-            return TranslaasService(self._options, language_resolver=language_resolver)
+            service = TranslaasService(self._options, language_resolver=language_resolver)
+            async with service:
+                yield service
 
         # Store dependency function in app state for access
         app.state.get_translaas_service = _get_translaas_service
 
 
-def get_translaas_service(request: "Request") -> TranslaasService:
+async def get_translaas_service(request: "Request") -> AsyncGenerator[TranslaasService, None]:
     """Dependency function to get TranslaasService instance.
 
     This function should be used as a FastAPI dependency to inject
-    TranslaasService into route handlers.
+    TranslaasService into route handlers. It properly manages the
+    async context manager lifecycle.
 
     Args:
         request: The FastAPI request object (injected by FastAPI).
 
-    Returns:
+    Yields:
         A TranslaasService instance configured for the current request.
 
     Raises:
@@ -202,9 +210,9 @@ def get_translaas_service(request: "Request") -> TranslaasService:
         )
 
     get_service_func = request.app.state.get_translaas_service
-    result = get_service_func(request)
-    assert isinstance(result, TranslaasService)
-    return result
+    # FastAPI will handle the async generator lifecycle
+    async for service in get_service_func(request):
+        yield service
 
 
 # Alias for backward compatibility and easier imports

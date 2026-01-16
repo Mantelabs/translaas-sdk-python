@@ -1,15 +1,41 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>{{ welcome }}</title>
+    <title>🌐 Translaas Django Example</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
+        .example { background: #f5f5f5; padding: 15px; margin: 20px 0; border-radius: 5px; }
+        .example h2 { margin-top: 0; }
+        code { background: #e9ecef; padding: 2px 6px; border-radius: 3px; }
+    </style>
 </head>
 <body>
-    <h1>{{ welcome }}</h1>
-    <p>{{ greeting }}</p>
-    <hr>
-    <h2>Template Tag Example:</h2>
-    {% load translaas_tags %}
-    <p>{% translaas "common" "welcome" %}</p>
-    <p>{% translaas "messages" "greeting" name="Template User" %}</p>
+    <h1>🌐 Translaas Django Example</h1>
+    <p>This page is server-side rendered with translations.</p>
+
+    <div class="example">
+        <h2>App Name</h2>
+        <p><strong>Translation:</strong> {{ app_name }}</p>
+        <code>t("common", "app.name", request=request, lang="en")</code>
+    </div>
+
+    <div class="example">
+        <h2>Welcome Message</h2>
+        <p><strong>Translation:</strong> {{ welcome }}</p>
+        <code>t("common", "welcome", request=request, lang="en")</code>
+    </div>
+
+    <div class="example">
+        <h2>Greeting with Parameters</h2>
+        <p><strong>Translation:</strong> {{ greeting }}</p>
+        <code>t("messages", "greeting", request=request, lang="en", parameters={"userName": "Django User", "itemCount": "1"})</code>
+    </div>
+
+    <div class="example">
+        <h2>Pluralization</h2>
+        <p><strong>Translation:</strong> {{ items }}</p>
+        <code>t("messages", "item", request=request, lang="en", number=5)</code>
+    </div>
+
 </body>
 </html>

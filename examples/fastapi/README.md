@@ -9,12 +9,14 @@ cd examples/fastapi
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
+cp .env.example .env
+# Edit .env and add your Translaas API key and configuration
 ```
 
 ## Running
 
 ```bash
-uvicorn main:app --reload
+uvicorn app:app --reload
 ```
 
 ## Features Demonstrated
