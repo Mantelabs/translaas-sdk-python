@@ -6,6 +6,9 @@ This example shows how to use the Translaas SDK with FastAPI, including:
 - Async usage in route handlers
 """
 
+import os
+
+from dotenv import load_dotenv
 from fastapi import Depends, FastAPI
 from fastapi.responses import HTMLResponse
 
@@ -13,13 +16,17 @@ from translaas import TranslaasOptions
 from translaas.extensions.fastapi import FastAPITranslaas, get_translaas_service
 from translaas.service import TranslaasService
 
+# Load environment variables from .env file
+load_dotenv()
+
 app = FastAPI()
 
-# Configure Translaas
+# Configure Translaas from environment variables
 options = TranslaasOptions(
-    api_key="your-api-key-here",
-    base_url="https://api.translaas.com",
-    default_language="en",
+    api_key=os.getenv("TRANSLAAS_API_KEY", "your-api-key-here"),
+    base_url=os.getenv("TRANSLAAS_BASE_URL", "https://api.translaas.com"),
+    default_language=os.getenv("TRANSLAAS_DEFAULT_LANGUAGE", "en"),
+    verify=os.getenv("TRANSLAAS_VERIFY", "true").lower() == "true",
 )
 
 # Initialize Translaas extension
