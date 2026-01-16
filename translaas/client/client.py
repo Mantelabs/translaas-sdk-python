@@ -85,7 +85,6 @@ class TranslaasClient(ITranslaasClient):
             base_url=self.options.base_url.rstrip("/"),
             headers={
                 "X-Api-Key": self.options.api_key,
-                "Content-Type": "application/json",
             },
             timeout=timeout,
             verify=self.options.verify,
@@ -235,15 +234,13 @@ class TranslaasClient(ITranslaasClient):
         try:
             # Convert request body dict to query parameters
             # Filter out None values and convert to strings
+            # Parameters are spread directly (matching JavaScript implementation)
             params: Dict[str, str] = {}
             for key, value in request_body.items():
                 if value is not None:
-                    if isinstance(value, dict):
-                        # For nested dicts (like parameters), serialize as JSON string
-                        params[key] = json.dumps(value)
-                    else:
-                        params[key] = str(value)
+                    params[key] = str(value)
 
+            # Send GET request with query parameters
             response = await client.get(url, params=params)
             response.raise_for_status()
 
@@ -298,7 +295,7 @@ class TranslaasClient(ITranslaasClient):
             if cached_value is not None:
                 return cached_value
 
-        # Build request body
+        # Build request body - spread parameters directly into query params (matching JS implementation)
         request_body: Dict[str, Any] = {
             "group": group,
             "entry": entry,
@@ -307,7 +304,8 @@ class TranslaasClient(ITranslaasClient):
         if number is not None:
             request_body["n"] = number
         if parameters:
-            request_body["parameters"] = parameters
+            # Spread parameters directly into query params, matching JavaScript implementation
+            request_body.update(parameters)
 
         # Make API request
         response_text_raw = await self._make_request(

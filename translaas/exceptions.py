@@ -336,12 +336,21 @@ def create_api_exception_from_httpx_error(
 
     # Extract status code from HTTPStatusError
     status_code: Optional[int] = None
+    response_body: Optional[str] = None
     if isinstance(error, httpx.HTTPStatusError):
         status_code = error.response.status_code
         if hasattr(error.response, "status_text"):
             message = f"API request failed: {error.response.status_text}"
         else:
             message = f"API request failed with status {status_code}"
+
+        # Try to extract response body for better error messages
+        try:
+            response_body = error.response.text
+            if response_body and len(response_body) < 500:  # Only include if reasonable length
+                message = f"{message}\nResponse: {response_body}"
+        except Exception:
+            pass  # Ignore errors when reading response body
 
     # Provide more specific messages for common error types
     if isinstance(error, httpx.TimeoutException):
