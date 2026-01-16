@@ -6,17 +6,23 @@ This example shows how to use the Translaas SDK with Flask, including:
 - Programmatic usage in views
 """
 
+import os
+
+from dotenv import load_dotenv
 from flask import Flask, render_template_string
 
 from translaas import TranslaasOptions
 from translaas.extensions.flask import FlaskTranslaas
 
+# Load environment variables from .env file
+load_dotenv()
+
 app = Flask(__name__)
 
-# Configure Translaas
-app.config["TRANSLAAS_API_KEY"] = "your-api-key-here"
-app.config["TRANSLAAS_BASE_URL"] = "https://api.translaas.com"
-app.config["TRANSLAAS_DEFAULT_LANGUAGE"] = "en"
+# Configure Translaas from environment variables
+app.config["TRANSLAAS_API_KEY"] = os.getenv("TRANSLAAS_API_KEY", "your-api-key-here")
+app.config["TRANSLAAS_BASE_URL"] = os.getenv("TRANSLAAS_BASE_URL", "https://api.translaas.com")
+app.config["TRANSLAAS_DEFAULT_LANGUAGE"] = os.getenv("TRANSLAAS_DEFAULT_LANGUAGE", "en")
 
 # Initialize Translaas extension
 translaas = FlaskTranslaas()
@@ -24,6 +30,7 @@ options = TranslaasOptions(
     api_key=app.config["TRANSLAAS_API_KEY"],
     base_url=app.config["TRANSLAAS_BASE_URL"],
     default_language=app.config["TRANSLAAS_DEFAULT_LANGUAGE"],
+    verify=os.getenv("TRANSLAAS_VERIFY", "true").lower() == "true",
 )
 translaas.init_app(app, options)
 
