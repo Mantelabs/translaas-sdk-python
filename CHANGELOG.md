@@ -14,14 +14,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support for disabling SSL verification for local development with self-signed certificates
 - `TRANSLAAS_VERIFY` environment variable support in Flask and Django extensions
 - Basic Python example demonstrating SDK usage without frameworks
+- Response body extraction in API error messages for better debugging
 
 ### Fixed
 - SSL certificate verification errors when connecting to local development APIs with self-signed certificates
+- Parameter spreading in API requests to match JavaScript SDK implementation (parameters now spread directly into query params instead of being serialized as JSON)
 
 ### Changed
 - All examples now use `.env` files for configuration instead of hardcoded values
 - Examples include `.env.example` templates for easy setup
 - Updated example README files with `.env` setup instructions
+- Improved error messages in `TranslaasApiException` to include API response body when available
+- `TranslaasClient.get_entry()` now spreads parameters directly into query parameters, matching JavaScript SDK behavior
 
 ## [0.1.1] - 2025-01-16
 
