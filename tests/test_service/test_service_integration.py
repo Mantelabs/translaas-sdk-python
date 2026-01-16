@@ -1,45 +1,16 @@
 """Integration tests for TranslaasService."""
 
-from typing import Dict, Optional
 from unittest.mock import AsyncMock, patch
 
 import pytest
 
+# Import shared fixtures from conftest
+from tests.conftest import MockCacheProvider  # noqa: F401
 from translaas.exceptions import TranslaasLanguageResolutionException
 from translaas.language.providers import DefaultLanguageProvider
 from translaas.language.resolver import LanguageResolver
 from translaas.models.options import TranslaasOptions
 from translaas.service import TranslaasService
-
-
-class MockCacheProvider:
-    """Mock cache provider for testing."""
-
-    def __init__(self) -> None:
-        """Initialize mock cache provider."""
-        self._cache: Dict[str, str] = {}
-
-    def get(self, key: str) -> Optional[str]:
-        """Get value from cache."""
-        return self._cache.get(key)
-
-    def set(
-        self,
-        key: str,
-        value: str,
-        absolute_expiration_ms: Optional[int] = None,
-        sliding_expiration_ms: Optional[int] = None,
-    ) -> None:
-        """Set value in cache."""
-        self._cache[key] = value
-
-    def remove(self, key: str) -> None:
-        """Remove value from cache."""
-        self._cache.pop(key, None)
-
-    def clear(self) -> None:
-        """Clear cache."""
-        self._cache.clear()
 
 
 @pytest.fixture

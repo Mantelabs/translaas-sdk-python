@@ -1,0 +1,23 @@
+{
+  "group1": {
+    "entry1": "Hello, World!",
+    "entry2": "Goodbye, World!",
+    "entry3": "Welcome"
+  },
+  "group2": {
+    "entry1": "Foo",
+    "entry2": "Bar",
+    "entry3": "Baz"
+  },
+  "group3": {
+    "plural_entry": {
+      "zero": "No items",
+      "one": "One item",
+      "two": "Two items",
+      "few": "Few items",
+      "many": "Many items",
+      "other": "Other items"
+    },
+    "simple_entry": "Simple translation"
+  }
+}
