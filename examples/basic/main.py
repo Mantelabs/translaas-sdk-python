@@ -48,51 +48,67 @@ async def main() -> None:
 
     # Use async context manager for proper resource cleanup
     async with service:
-        # Example 1: Basic translation lookup
-        print("Example 1: Basic Translation Lookup")
+        # Example 1: App Name (nested entry key)
+        print("Example 1: App Name")
         print("-" * 60)
         try:
-            translation = await service.t("common", "welcome", "en")
-            print(f"Translation: {translation}")
+            app_name = await service.t("common", "app.name", "en")
+            print(f"Translation: {app_name}")
+            print(f"Code: await service.t('common', 'app.name', 'en')")
         except TranslaasApiException as e:
             print(f"Error: {e.message} (Status: {e.status_code})")
         except Exception as e:
             print(f"Unexpected error: {str(e)}")
         print()
 
-        # Example 2: Translation with parameters
-        print("Example 2: Translation with Parameters")
+        # Example 2: Welcome Message (basic translation with explicit language)
+        print("Example 2: Welcome Message")
+        print("-" * 60)
+        try:
+            welcome = await service.t("common", "welcome", "en")
+            print(f"Translation: {welcome}")
+            print(f"Code: await service.t('common', 'welcome', 'en')")
+        except TranslaasApiException as e:
+            print(f"Error: {e.message} (Status: {e.status_code})")
+        except Exception as e:
+            print(f"Unexpected error: {str(e)}")
+        print()
+
+        # Example 3: Greeting with Parameters
+        print("Example 3: Greeting with Parameters")
         print("-" * 60)
         try:
             greeting = await service.t(
                 "messages",
                 "greeting",
                 "en",
-                parameters={"name": "Python User"},
+                {"userName": "Python User", "itemCount": "1"},
             )
-            print(f"Greeting: {greeting}")
+            print(f"Translation: {greeting}")
+            print(
+                f"Code: await service.t('messages', 'greeting', 'en', {{ userName: 'Python User', itemCount: '1' }})"
+            )
         except TranslaasApiException as e:
             print(f"Error: {e.message} (Status: {e.status_code})")
         except Exception as e:
             print(f"Unexpected error: {str(e)}")
         print()
 
-        # Example 3: Translation with pluralization
-        print("Example 3: Translation with Pluralization")
+        # Example 4: Pluralization
+        print("Example 4: Pluralization")
         print("-" * 60)
         try:
-            # Try with different numbers to demonstrate pluralization
-            for count in [0, 1, 5]:
-                message = await service.t("messages", "item.count", "en", number=count)
-                print(f"Items ({count}): {message}")
+            items = await service.t("messages", "item", "en", 5.0)
+            print(f"Translation: {items}")
+            print(f"Code: await service.t('messages', 'item', 'en', 5)")
         except TranslaasApiException as e:
             print(f"Error: {e.message} (Status: {e.status_code})")
         except Exception as e:
             print(f"Unexpected error: {str(e)}")
         print()
 
-        # Example 4: Caching demonstration
-        print("Example 4: Caching Demonstration")
+        # Example 5: Caching demonstration
+        print("Example 5: Caching Demonstration")
         print("-" * 60)
         try:
             # First call - will hit the API
@@ -113,8 +129,8 @@ async def main() -> None:
             print(f"Unexpected error: {str(e)}")
         print()
 
-        # Example 5: Error handling
-        print("Example 5: Error Handling")
+        # Example 6: Error handling
+        print("Example 6: Error Handling")
         print("-" * 60)
         try:
             # Try to get a non-existent translation
@@ -130,14 +146,14 @@ async def main() -> None:
             print(f"Unexpected error: {type(e).__name__}: {str(e)}")
         print()
 
-        # Example 6: Multiple translations
-        print("Example 6: Multiple Translations")
+        # Example 7: Multiple translations
+        print("Example 7: Multiple Translations")
         print("-" * 60)
         try:
             translations = await asyncio.gather(
                 service.t("common", "welcome", "en"),
                 service.t("common", "about", "en"),
-                service.t("messages", "greeting", "en", parameters={"name": "User"}),
+                service.t("messages", "greeting", "en", {"userName": "User", "itemCount": "5"}),
                 return_exceptions=True,
             )
 
