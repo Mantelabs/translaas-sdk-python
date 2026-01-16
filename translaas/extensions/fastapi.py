@@ -4,7 +4,7 @@ This module provides FastAPI-specific integrations including dependency injectio
 helper methods, and request language providers for using Translaas in FastAPI applications.
 """
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, AsyncGenerator, Optional
 
 try:
     from fastapi import Request
@@ -145,7 +145,9 @@ class Translaas:
         app.state.translaas_options = options
 
         # Create dependency function that properly manages async context manager lifecycle
-        async def _get_translaas_service(request: "Request"):
+        async def _get_translaas_service(
+            request: "Request"
+        ) -> AsyncGenerator[TranslaasService, None]:
             """Create and manage a TranslaasService instance for the current request.
 
             This dependency properly manages the async context manager lifecycle
@@ -166,7 +168,7 @@ class Translaas:
         app.state.get_translaas_service = _get_translaas_service
 
 
-async def get_translaas_service(request: "Request"):
+async def get_translaas_service(request: "Request") -> AsyncGenerator[TranslaasService, None]:
     """Dependency function to get TranslaasService instance.
 
     This function should be used as a FastAPI dependency to inject

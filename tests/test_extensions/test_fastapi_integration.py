@@ -52,7 +52,7 @@ class TestFastAPITranslaas:
 
         assert app.state.translaas_options == options
 
-    def test_get_translaas_service_dependency(self) -> None:
+    async def test_get_translaas_service_dependency(self) -> None:
         """Test get_translaas_service dependency function."""
         from fastapi import FastAPI, Request
 
@@ -69,13 +69,17 @@ class TestFastAPITranslaas:
         request = Mock(spec=Request)
         request.app = app
 
-        # Get service
-        service = get_translaas_service(request)
+        # Get service (async generator, need to iterate)
+        async_gen = get_translaas_service(request)
+        service = await async_gen.__anext__()
 
         assert service is not None
         assert service.options == options
 
-    def test_get_translaas_service_raises_if_not_initialized(self) -> None:
+        # Clean up
+        await async_gen.aclose()
+
+    async def test_get_translaas_service_raises_if_not_initialized(self) -> None:
         """Test that get_translaas_service raises if extension not initialized."""
         from fastapi import Request
 
@@ -84,8 +88,9 @@ class TestFastAPITranslaas:
         request.app.state = Mock()
         delattr(request.app.state, "get_translaas_service")
 
+        async_gen = get_translaas_service(request)
         with pytest.raises(RuntimeError, match="not initialized"):
-            get_translaas_service(request)
+            await async_gen.__anext__()
 
 
 class TestFastAPIRequestLanguageProvider:

@@ -54,7 +54,7 @@ async def main() -> None:
         try:
             app_name = await service.t("common", "app.name", "en")
             print(f"Translation: {app_name}")
-            print(f"Code: await service.t('common', 'app.name', 'en')")
+            print("Code: await service.t('common', 'app.name', 'en')")
         except TranslaasApiException as e:
             print(f"Error: {e.message} (Status: {e.status_code})")
         except Exception as e:
@@ -67,7 +67,7 @@ async def main() -> None:
         try:
             welcome = await service.t("common", "welcome", "en")
             print(f"Translation: {welcome}")
-            print(f"Code: await service.t('common', 'welcome', 'en')")
+            print("Code: await service.t('common', 'welcome', 'en')")
         except TranslaasApiException as e:
             print(f"Error: {e.message} (Status: {e.status_code})")
         except Exception as e:
@@ -86,7 +86,7 @@ async def main() -> None:
             )
             print(f"Translation: {greeting}")
             print(
-                f"Code: await service.t('messages', 'greeting', 'en', {{ userName: 'Python User', itemCount: '1' }})"
+                "Code: await service.t('messages', 'greeting', 'en', { userName: 'Python User', itemCount: '1' })"
             )
         except TranslaasApiException as e:
             print(f"Error: {e.message} (Status: {e.status_code})")
@@ -100,7 +100,7 @@ async def main() -> None:
         try:
             items = await service.t("messages", "item", "en", 5.0)
             print(f"Translation: {items}")
-            print(f"Code: await service.t('messages', 'item', 'en', 5)")
+            print("Code: await service.t('messages', 'item', 'en', 5)")
         except TranslaasApiException as e:
             print(f"Error: {e.message} (Status: {e.status_code})")
         except Exception as e:
@@ -137,7 +137,7 @@ async def main() -> None:
             translation = await service.t("nonexistent", "missing", "en")
             print(f"Translation: {translation}")
         except TranslaasApiException as e:
-            print(f"Caught TranslaasApiException:")
+            print("Caught TranslaasApiException:")
             print(f"  Message: {e.message}")
             print(f"  Status Code: {e.status_code}")
             if e.inner_error:

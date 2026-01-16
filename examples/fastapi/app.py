@@ -106,14 +106,6 @@ async def get_translation(
     service: TranslaasService = Depends(get_translaas_service),
 ):
     """API endpoint demonstrating translation retrieval."""
-    from fastapi import Query
-    from typing import Dict
-
-    # Get parameters from query string
-    parameters: Dict[str, str] = {}
-    # Note: FastAPI doesn't easily support arbitrary query params, so we'd need to use request.query_params
-    # For simplicity, this example focuses on lang and number
-
     try:
         if number is not None:
             if lang:
