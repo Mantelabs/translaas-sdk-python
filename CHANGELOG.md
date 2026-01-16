@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - SSL certificate verification errors when connecting to local development APIs with self-signed certificates
 - Parameter spreading in API requests to match JavaScript SDK implementation (parameters now spread directly into query params instead of being serialized as JSON)
+- FastAPI extension now properly manages async context manager lifecycle for TranslaasService instances
 
 ### Changed
 - All examples now use `.env` files for configuration instead of hardcoded values
