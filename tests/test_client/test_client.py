@@ -8,14 +8,13 @@ from unittest.mock import AsyncMock, patch
 import httpx
 import pytest
 
+# Import shared fixtures and utilities from conftest
+from tests.conftest import MockCacheProvider  # noqa: F401
 from translaas.client.client import TranslaasClient
 from translaas.exceptions import TranslaasApiException, TranslaasConfigurationException
 from translaas.models.enums import CacheMode
 from translaas.models.options import TranslaasOptions
 from translaas.models.responses import ProjectLocales, TranslationGroup, TranslationProject
-
-# Import shared fixtures and utilities from conftest
-from tests.conftest import MockCacheProvider  # noqa: F401
 
 
 class TestTranslaasClientInitialization:

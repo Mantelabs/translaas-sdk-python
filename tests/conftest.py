@@ -3,10 +3,8 @@
 This module provides common fixtures and test utilities used across all test modules.
 """
 
-import json
 from datetime import timedelta
 from typing import Dict, Optional
-from unittest.mock import AsyncMock, MagicMock
 
 import httpx
 import pytest
@@ -14,7 +12,6 @@ import pytest
 from translaas.client.client import TranslaasClient
 from translaas.models.enums import CacheMode, OfflineFallbackMode
 from translaas.models.options import OfflineCacheOptions, TranslaasOptions
-from translaas.models.protocols import ITranslaasCacheProvider
 from translaas.models.responses import ProjectLocales, TranslationGroup, TranslationProject
 
 

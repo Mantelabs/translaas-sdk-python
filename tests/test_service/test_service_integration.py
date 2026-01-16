@@ -4,14 +4,13 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
+# Import shared fixtures from conftest
+from tests.conftest import MockCacheProvider  # noqa: F401
 from translaas.exceptions import TranslaasLanguageResolutionException
 from translaas.language.providers import DefaultLanguageProvider
 from translaas.language.resolver import LanguageResolver
 from translaas.models.options import TranslaasOptions
 from translaas.service import TranslaasService
-
-# Import shared fixtures from conftest
-from tests.conftest import MockCacheProvider  # noqa: F401
 
 
 @pytest.fixture
