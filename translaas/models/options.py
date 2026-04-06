@@ -74,6 +74,12 @@ class TranslaasOptions:
         offline_cache: Optional offline cache configuration.
         default_language: Optional default language code to use when not specified.
         verify: Whether to verify SSL certificates. Defaults to True. Set to False for local development with self-signed certificates.
+        default_project: Optional default `project` query for single-text fetches (multi-project API keys).
+        channel: Optional SDK snapshot channel passed as query `channel`.
+        snapshot_version: Optional SDK snapshot version passed as query `v`.
+        include_context: Optional flag for `includeContext` on project/group/offline-cache requests.
+        use_conditional_requests: When True, reuse ETags with `If-None-Match` and handle 304 when caching is enabled.
+        api_key_header: HTTP header name for the API key.
 
     Raises:
         ValueError: If api_key or base_url is empty or None.
@@ -88,6 +94,18 @@ class TranslaasOptions:
     offline_cache: Optional[OfflineCacheOptions] = None
     default_language: Optional[str] = None
     verify: bool = True
+    #: Sent as `project` on SDK text calls when not overridden per request (tenant / multi-project keys).
+    default_project: Optional[str] = None
+    #: Optional release channel query (`channel`).
+    channel: Optional[str] = None
+    #: Optional snapshot / version query (`v`).
+    snapshot_version: Optional[str] = None
+    #: When set, adds `includeContext=true|false` on project, group, and offline-cache requests.
+    include_context: Optional[bool] = None
+    #: Send `If-None-Match` using the last ETag seen per resource key; on 304, return cached body when available.
+    use_conditional_requests: bool = False
+    #: Header name for the API key (default matches OpenAPI).
+    api_key_header: str = "X-Api-Key"
 
     def __post_init__(self) -> None:
         """Validate configuration options after initialization.
