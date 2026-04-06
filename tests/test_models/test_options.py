@@ -9,6 +9,7 @@ from translaas.models.options import (
     HybridCacheOptions,
     OfflineCacheOptions,
     TranslaasOptions,
+    normalize_translaas_base_url,
 )
 
 
@@ -74,6 +75,24 @@ class TestTranslaasOptions:
         """Test that whitespace-only api_key raises ValueError."""
         with pytest.raises(ValueError, match="api_key is required"):
             TranslaasOptions(api_key="   ", base_url="https://api.example.com")
+
+    def test_base_url_trailing_sdk_v1_stripped(self) -> None:
+        """Pasting API root including /sdk/v1 should not double the path prefix."""
+        options = TranslaasOptions(
+            api_key="k",
+            base_url="https://api.translaas.local/sdk/v1",
+        )
+        assert options.base_url == "https://api.translaas.local"
+
+        options2 = TranslaasOptions(
+            api_key="k",
+            base_url="https://api.translaas.local/sdk/v1/",
+        )
+        assert options2.base_url == "https://api.translaas.local"
+
+    def test_normalize_translaas_base_url_case_insensitive(self) -> None:
+        """Suffix /sdk/v1 is stripped case-insensitively."""
+        assert normalize_translaas_base_url("https://host/SDK/v1") == "https://host"
 
 
 class TestOfflineCacheOptions:

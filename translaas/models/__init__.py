@@ -11,6 +11,7 @@ from translaas.models.options import (
     HybridCacheOptions,
     OfflineCacheOptions,
     TranslaasOptions,
+    normalize_translaas_base_url,
 )
 from translaas.models.sdk_payloads import (
     ReportMissingKeyItem,
@@ -50,6 +51,7 @@ __all__ = [
     "TranslaasOptions",
     "OfflineCacheOptions",
     "HybridCacheOptions",
+    "normalize_translaas_base_url",
     "ReportMissingKeyItem",
     "ValidateApiKeyResult",
     # Response models

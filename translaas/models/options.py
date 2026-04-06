@@ -7,6 +7,23 @@ from typing import List, Optional
 from translaas.models.enums import CacheMode, OfflineFallbackMode
 
 
+def normalize_translaas_base_url(url: str) -> str:
+    """Normalize ``base_url`` for the HTTP client.
+
+    If the URL ends with ``/sdk/v1`` (case-insensitive), that segment is removed.
+    The client always requests paths like ``sdk/v1/translations/...`` relative to
+    this origin, so both of these are equivalent:
+
+    - ``https://api.translaas.local``
+    - ``https://api.translaas.local/sdk/v1``
+    """
+    u = url.strip().rstrip("/")
+    suffix = "/sdk/v1"
+    if u.lower().endswith(suffix):
+        u = u[: -len(suffix)].rstrip("/")
+    return u
+
+
 @dataclass
 class HybridCacheOptions:
     """Configuration options for hybrid caching (memory + file cache).
@@ -66,7 +83,10 @@ class TranslaasOptions:
 
     Attributes:
         api_key: API key for authenticating with the Translaas API. Required.
-        base_url: Base URL of the Translaas API. Required.
+        base_url: Origin of the Translaas API (scheme + host [+ port]), e.g.
+            ``https://api.translaas.local``. You may also paste ``.../sdk/v1``;
+            that suffix is stripped automatically because the client appends
+            ``sdk/v1/translations/...`` paths itself.
         cache_mode: Cache mode for translations. Defaults to NONE.
         timeout: Optional timeout for API requests.
         cache_absolute_expiration: Optional absolute expiration time for cache entries.
@@ -116,4 +136,7 @@ class TranslaasOptions:
         if not self.api_key or not isinstance(self.api_key, str) or not self.api_key.strip():
             raise ValueError("api_key is required and cannot be empty")
         if not self.base_url or not isinstance(self.base_url, str) or not self.base_url.strip():
+            raise ValueError("base_url is required and cannot be empty")
+        self.base_url = normalize_translaas_base_url(self.base_url)
+        if not self.base_url:
             raise ValueError("base_url is required and cannot be empty")
