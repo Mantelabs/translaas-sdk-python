@@ -11,6 +11,7 @@ from translaas.models.options import (
     HybridCacheOptions,
     OfflineCacheOptions,
     TranslaasOptions,
+    normalize_translaas_base_url,
 )
 
 # Protocols
@@ -26,6 +27,10 @@ from translaas.models.responses import (
     ProjectLocales,
     TranslationGroup,
     TranslationProject,
+)
+from translaas.models.sdk_payloads import (
+    ReportMissingKeyItem,
+    ValidateApiKeyResult,
 )
 
 # Type aliases
@@ -46,6 +51,9 @@ __all__ = [
     "TranslaasOptions",
     "OfflineCacheOptions",
     "HybridCacheOptions",
+    "normalize_translaas_base_url",
+    "ReportMissingKeyItem",
+    "ValidateApiKeyResult",
     # Response models
     "TranslationGroup",
     "TranslationProject",

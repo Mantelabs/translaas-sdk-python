@@ -14,6 +14,7 @@ from translaas.language.providers import DefaultLanguageProvider
 from translaas.language.resolver import LanguageResolver
 from translaas.models.options import TranslaasOptions
 from translaas.models.responses import ProjectLocales, TranslationGroup, TranslationProject
+from translaas.models.sdk_payloads import ReportMissingKeyItem, ValidateApiKeyResult
 from translaas.service import TranslaasService
 
 
@@ -184,7 +185,14 @@ class TestTranslaasServiceTMethod:
             result = await service.t("group", "entry", "fr")
             assert result == "Hello World"
             mock_get.assert_called_once_with(
-                group="group", entry="entry", lang="fr", number=None, parameters=None
+                group="group",
+                entry="entry",
+                lang="fr",
+                number=None,
+                parameters=None,
+                project=None,
+                channel=None,
+                snapshot_version=None,
             )
 
     @pytest.mark.asyncio
@@ -195,7 +203,14 @@ class TestTranslaasServiceTMethod:
             result = await service.t("group", "entry")
             assert result == "Hello World"
             mock_get.assert_called_once_with(
-                group="group", entry="entry", lang="en", number=None, parameters=None
+                group="group",
+                entry="entry",
+                lang="en",
+                number=None,
+                parameters=None,
+                project=None,
+                channel=None,
+                snapshot_version=None,
             )
 
     @pytest.mark.asyncio
@@ -206,7 +221,14 @@ class TestTranslaasServiceTMethod:
             result = await service.t("group", "entry", 5.0)
             assert result == "5 items"
             mock_get.assert_called_once_with(
-                group="group", entry="entry", lang="en", number=5.0, parameters=None
+                group="group",
+                entry="entry",
+                lang="en",
+                number=5.0,
+                parameters=None,
+                project=None,
+                channel=None,
+                snapshot_version=None,
             )
 
     @pytest.mark.asyncio
@@ -217,7 +239,14 @@ class TestTranslaasServiceTMethod:
             result = await service.t("group", "entry", "fr", 5.0)
             assert result == "5 items"
             mock_get.assert_called_once_with(
-                group="group", entry="entry", lang="fr", number=5.0, parameters=None
+                group="group",
+                entry="entry",
+                lang="fr",
+                number=5.0,
+                parameters=None,
+                project=None,
+                channel=None,
+                snapshot_version=None,
             )
 
     @pytest.mark.asyncio
@@ -228,7 +257,14 @@ class TestTranslaasServiceTMethod:
             result = await service.t("group", "entry", {"name": "John"})
             assert result == "Hello John!"
             mock_get.assert_called_once_with(
-                group="group", entry="entry", lang="en", number=None, parameters=None
+                group="group",
+                entry="entry",
+                lang="en",
+                number=None,
+                parameters=None,
+                project=None,
+                channel=None,
+                snapshot_version=None,
             )
 
     @pytest.mark.asyncio
@@ -239,7 +275,14 @@ class TestTranslaasServiceTMethod:
             result = await service.t("group", "entry", "fr", {"name": "John"})
             assert result == "Hello John!"
             mock_get.assert_called_once_with(
-                group="group", entry="entry", lang="fr", number=None, parameters=None
+                group="group",
+                entry="entry",
+                lang="fr",
+                number=None,
+                parameters=None,
+                project=None,
+                channel=None,
+                snapshot_version=None,
             )
 
     @pytest.mark.asyncio
@@ -271,7 +314,14 @@ class TestTranslaasServiceConvenienceMethods:
             result = await service.get_entry("group", "entry", "en", parameters={"name": "John"})
             assert result == "Hello John!"
             mock_get.assert_called_once_with(
-                group="group", entry="entry", lang="en", number=None, parameters=None
+                group="group",
+                entry="entry",
+                lang="en",
+                number=None,
+                parameters=None,
+                project=None,
+                channel=None,
+                snapshot_version=None,
             )
 
     @pytest.mark.asyncio
@@ -283,7 +333,13 @@ class TestTranslaasServiceConvenienceMethods:
             result = await service.get_group("project", "group", "en")
             assert result == group_data
             mock_get.assert_called_once_with(
-                project="project", group="group", lang="en", format=None
+                project="project",
+                group="group",
+                lang="en",
+                format=None,
+                include_context=None,
+                channel=None,
+                snapshot_version=None,
             )
 
     @pytest.mark.asyncio
@@ -294,7 +350,14 @@ class TestTranslaasServiceConvenienceMethods:
             mock_get.return_value = project_data
             result = await service.get_project("project", "en")
             assert result == project_data
-            mock_get.assert_called_once_with(project="project", lang="en", format=None)
+            mock_get.assert_called_once_with(
+                project="project",
+                lang="en",
+                format=None,
+                include_context=None,
+                channel=None,
+                snapshot_version=None,
+            )
 
     @pytest.mark.asyncio
     async def test_get_project_locales(self, service: TranslaasService) -> None:
@@ -306,4 +369,77 @@ class TestTranslaasServiceConvenienceMethods:
             mock_get.return_value = locales_data
             result = await service.get_project_locales("project")
             assert result == locales_data
-            mock_get.assert_called_once_with(project="project")
+            mock_get.assert_called_once_with(
+                project="project",
+                channel=None,
+                snapshot_version=None,
+            )
+
+
+class TestTranslaasServiceSdkDelegates:
+    """``TranslaasService`` passthroughs for validate / report / offline and query kwargs."""
+
+    @pytest.mark.asyncio
+    async def test_get_group_forwards_include_channel_version(
+        self, service: TranslaasService
+    ) -> None:
+        grp = TranslationGroup(entries={"a": "b"})
+        with patch.object(service._client, "get_group", new_callable=AsyncMock) as mock_gg:
+            mock_gg.return_value = grp
+            out = await service.get_group(
+                "p",
+                "g",
+                "en",
+                format="flat-json",
+                include_context=True,
+                channel="c",
+                snapshot_version="9",
+            )
+        assert out == grp
+        mock_gg.assert_called_once_with(
+            project="p",
+            group="g",
+            lang="en",
+            format="flat-json",
+            include_context=True,
+            channel="c",
+            snapshot_version="9",
+        )
+
+    @pytest.mark.asyncio
+    async def test_validate_api_key_delegates(self, service: TranslaasService) -> None:
+        val = ValidateApiKeyResult(
+            is_valid=True,
+            tenant_id="t",
+            project_id="p",
+            integration_name="i",
+            authenticated_at="2020-01-01T00:00:00Z",
+        )
+        with patch.object(service._client, "validate_api_key", new_callable=AsyncMock) as m:
+            m.return_value = val
+            r = await service.validate_api_key()
+        assert r == val
+        m.assert_called_once_with()
+
+    @pytest.mark.asyncio
+    async def test_report_missing_keys_delegates(self, service: TranslaasService) -> None:
+        keys = [ReportMissingKeyItem("g", "e", "en")]
+        with patch.object(service._client, "report_missing_keys", new_callable=AsyncMock) as m:
+            m.return_value = None
+            await service.report_missing_keys(keys)
+        m.assert_called_once_with(keys)
+
+    @pytest.mark.asyncio
+    async def test_get_offline_cache_delegates(self, service: TranslaasService) -> None:
+        with patch.object(service._client, "get_offline_cache", new_callable=AsyncMock) as m:
+            m.return_value = b"z"
+            data = await service.get_offline_cache(
+                "proj", include_context=False, channel="ch", snapshot_version="1"
+            )
+        assert data == b"z"
+        m.assert_called_once_with(
+            "proj",
+            include_context=False,
+            channel="ch",
+            snapshot_version="1",
+        )

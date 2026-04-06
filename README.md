@@ -266,16 +266,19 @@ pytest --cov=translaas --cov-report=html
 
 ## API Endpoints
 
-The SDK communicates with the following Translaas API endpoints:
+The SDK communicates with the Translaas HTTP API (OpenAPI-aligned paths). `base_url` should be the API origin only (for example `https://api.translaas.com`).
 
-| Endpoint                    | Method | Purpose                             |
-| --------------------------- | ------ | ----------------------------------- |
-| `/api/translations/text`    | GET    | Get single translation entry        |
-| `/api/translations/group`   | GET    | Get all translations for a group    |
-| `/api/translations/project` | GET    | Get all translations for a project  |
-| `/api/translations/locales` | GET    | Get available locales for a project |
+| Endpoint                             | Method | Purpose                                       |
+| ------------------------------------ | ------ | --------------------------------------------- |
+| `/sdk/v1/translations/text`          | GET    | Get single translation entry                  |
+| `/sdk/v1/translations/group`         | GET    | Get all translations for a group              |
+| `/sdk/v1/translations/project`      | GET    | Get all translations for a project            |
+| `/sdk/v1/translations/locales`       | GET    | Get available locales for a project           |
+| `/sdk/v1/translations/report-missing`| POST   | Report missing keys (project-scoped API key)  |
+| `/sdk/v1/translations/offline-cache` | GET    | Download offline translation ZIP bundle       |
+| `/api/v1/api-keys/validate`          | GET    | Validate API key (connectivity / bootstrap)   |
 
-**Note:** All endpoints use GET requests with query parameters.
+**Note:** Translation endpoints use GET with query parameters except `report-missing` (JSON body). Optional query flags include `channel`, `v`, and `includeContext` where the backend supports them; configure via `TranslaasOptions` or per-call arguments on the client.
 
 ## Authentication
 
@@ -290,7 +293,7 @@ options = TranslaasOptions(
 
 ## Examples
 
-We provide example applications demonstrating how to use the Translaas SDK in different environments:
+Example applications are maintained under `examples/` but that directory is **not** tracked in this repository (see `.gitignore`). If you already have `examples/` locally—whether from a teammate, an internal package, or your own copy—the layout and commands below apply.
 
 ### Basic Python Example
 
@@ -304,8 +307,6 @@ pip install -r requirements.txt
 python main.py
 ```
 
-[View Basic Python Example →](examples/basic/)
-
 ### Flask Example
 
 Flask server with middleware integration and automatic language resolution from HTTP requests.
@@ -317,8 +318,6 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 python app.py
 ```
-
-[View Flask Example →](examples/flask/)
 
 ### FastAPI Example
 
@@ -332,8 +331,6 @@ pip install -r requirements.txt
 uvicorn main:app --reload
 ```
 
-[View FastAPI Example →](examples/fastapi/)
-
 ### Django Example
 
 Django application with middleware integration, template tags, and automatic language resolution.
@@ -345,8 +342,6 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 python manage.py runserver
 ```
-
-[View Django Example →](examples/django/)
 
 ## License
 

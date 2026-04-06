@@ -16,7 +16,7 @@ def create_mock_response(
     status_code: int = 200,
     text: Optional[str] = None,
     json_data: Optional[Dict[str, Any]] = None,
-    url: str = "https://api.test.com/api/translations/text",
+    url: str = "https://api.test.com/sdk/v1/translations/text",
 ) -> httpx.Response:
     """Create a mock HTTP response.
 

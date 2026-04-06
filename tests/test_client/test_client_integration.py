@@ -75,25 +75,25 @@ class TestTranslaasClientIntegration:
     async def test_full_workflow_without_cache(self, options: TranslaasOptions) -> None:
         """Test complete workflow without caching."""
         mock_responses = {
-            "/api/translations/text": httpx.Response(
+            "/sdk/v1/translations/text": httpx.Response(
                 200,
                 text="Hello",
-                request=httpx.Request("GET", "https://api.test.com/api/translations/text"),
+                request=httpx.Request("GET", "https://api.test.com/sdk/v1/translations/text"),
             ),
-            "/api/translations/group": httpx.Response(
+            "/sdk/v1/translations/group": httpx.Response(
                 200,
                 json={"entry1": "value1"},
-                request=httpx.Request("GET", "https://api.test.com/api/translations/group"),
+                request=httpx.Request("GET", "https://api.test.com/sdk/v1/translations/group"),
             ),
-            "/api/translations/project": httpx.Response(
+            "/sdk/v1/translations/project": httpx.Response(
                 200,
                 json={"group1": {"entry1": "value1"}},
-                request=httpx.Request("GET", "https://api.test.com/api/translations/project"),
+                request=httpx.Request("GET", "https://api.test.com/sdk/v1/translations/project"),
             ),
-            "/api/translations/locales": httpx.Response(
+            "/sdk/v1/translations/locales": httpx.Response(
                 200,
                 json={"locales": ["en", "fr"]},
-                request=httpx.Request("GET", "https://api.test.com/api/translations/locales"),
+                request=httpx.Request("GET", "https://api.test.com/sdk/v1/translations/locales"),
             ),
         }
 
@@ -131,7 +131,7 @@ class TestTranslaasClientIntegration:
         mock_response = httpx.Response(
             200,
             text="Cached Entry",
-            request=httpx.Request("GET", "https://api.test.com/api/translations/text"),
+            request=httpx.Request("GET", "https://api.test.com/sdk/v1/translations/text"),
         )
 
         async with TranslaasClient(options, cache_provider=cache_provider) as client:
@@ -159,7 +159,7 @@ class TestTranslaasClientIntegration:
         mock_response = httpx.Response(
             200,
             json={"entry1": "value1", "entry2": "value2"},
-            request=httpx.Request("GET", "https://api.test.com/api/translations/group"),
+            request=httpx.Request("GET", "https://api.test.com/sdk/v1/translations/group"),
         )
 
         async with TranslaasClient(options, cache_provider=cache_provider) as client:
@@ -185,7 +185,7 @@ class TestTranslaasClientIntegration:
         mock_response = httpx.Response(
             200,
             json={"group1": {"entry1": "value1"}},
-            request=httpx.Request("GET", "https://api.test.com/api/translations/project"),
+            request=httpx.Request("GET", "https://api.test.com/sdk/v1/translations/project"),
         )
 
         async with TranslaasClient(options, cache_provider=cache_provider) as client:
@@ -211,7 +211,7 @@ class TestTranslaasClientIntegration:
         mock_response = httpx.Response(
             200,
             text="No Cache",
-            request=httpx.Request("GET", "https://api.test.com/api/translations/text"),
+            request=httpx.Request("GET", "https://api.test.com/sdk/v1/translations/text"),
         )
 
         async with TranslaasClient(options, cache_provider=cache_provider) as client:
@@ -239,7 +239,7 @@ class TestTranslaasClientIntegration:
         mock_response = httpx.Response(
             200,
             text="Value",
-            request=httpx.Request("GET", "https://api.test.com/api/translations/text"),
+            request=httpx.Request("GET", "https://api.test.com/sdk/v1/translations/text"),
         )
 
         async with TranslaasClient(options, cache_provider=cache_provider) as client:
@@ -263,7 +263,7 @@ class TestTranslaasClientIntegration:
         mock_response = httpx.Response(
             200,
             text="Hello, John!",
-            request=httpx.Request("GET", "https://api.test.com/api/translations/text"),
+            request=httpx.Request("GET", "https://api.test.com/sdk/v1/translations/text"),
         )
 
         async with TranslaasClient(options, cache_provider=cache_provider) as client:
@@ -285,7 +285,7 @@ class TestTranslaasClientIntegration:
         mock_response = httpx.Response(
             200,
             text="1 item",
-            request=httpx.Request("GET", "https://api.test.com/api/translations/text"),
+            request=httpx.Request("GET", "https://api.test.com/sdk/v1/translations/text"),
         )
 
         async with TranslaasClient(options, cache_provider=cache_provider) as client:
@@ -304,7 +304,7 @@ class TestTranslaasClientIntegration:
         mock_response = httpx.Response(
             500,
             text="Internal Server Error",
-            request=httpx.Request("GET", "https://api.test.com/api/translations/text"),
+            request=httpx.Request("GET", "https://api.test.com/sdk/v1/translations/text"),
         )
 
         async with TranslaasClient(options) as client:
@@ -323,7 +323,7 @@ class TestTranslaasClientIntegration:
         mock_response = httpx.Response(
             200,
             text="Success",
-            request=httpx.Request("GET", "https://api.test.com/api/translations/text"),
+            request=httpx.Request("GET", "https://api.test.com/sdk/v1/translations/text"),
         )
 
         async with TranslaasClient(options) as client:
@@ -345,7 +345,7 @@ class TestTranslaasClientIntegration:
             httpx.Response(
                 200,
                 text=f"Response {i}",
-                request=httpx.Request("GET", "https://api.test.com/api/translations/text"),
+                request=httpx.Request("GET", "https://api.test.com/sdk/v1/translations/text"),
             )
             for i in range(5)
         ]
@@ -373,7 +373,7 @@ class TestTranslaasClientIntegration:
         mock_response = httpx.Response(
             200,
             json={"entry1": "value1"},
-            request=httpx.Request("GET", "https://api.test.com/api/translations/group"),
+            request=httpx.Request("GET", "https://api.test.com/sdk/v1/translations/group"),
         )
 
         async with TranslaasClient(options, cache_provider=cache_provider) as client:

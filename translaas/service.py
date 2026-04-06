@@ -6,7 +6,7 @@ parameter replacement.
 """
 
 import re
-from typing import Dict, Optional, Union, overload
+from typing import Dict, List, Optional, Union, overload
 
 from translaas.client.client import TranslaasClient
 from translaas.exceptions import (
@@ -17,6 +17,7 @@ from translaas.language.resolver import LanguageResolver
 from translaas.models.options import TranslaasOptions
 from translaas.models.protocols import ITranslaasCacheProvider, ITranslaasService
 from translaas.models.responses import ProjectLocales, TranslationGroup, TranslationProject
+from translaas.models.sdk_payloads import ReportMissingKeyItem, ValidateApiKeyResult
 
 
 class TranslaasService(ITranslaasService):
@@ -396,6 +397,9 @@ class TranslaasService(ITranslaasService):
             lang=resolved_lang,
             number=number,
             parameters=None,  # We handle parameters client-side
+            project=self.options.default_project,
+            channel=None,
+            snapshot_version=None,
         )
 
         # Replace parameters client-side
@@ -411,6 +415,10 @@ class TranslaasService(ITranslaasService):
         lang: str,
         number: Optional[float] = None,
         parameters: Optional[Dict[str, str]] = None,
+        *,
+        project: Optional[str] = None,
+        channel: Optional[str] = None,
+        snapshot_version: Optional[str] = None,
     ) -> str:
         """Get a single translation entry.
 
@@ -423,6 +431,9 @@ class TranslaasService(ITranslaasService):
             lang: The language code (ISO 639-1).
             number: Optional number for plural form selection.
             parameters: Optional dictionary of parameters for string interpolation.
+            project: Optional project slug/id (falls back to ``default_project`` in options).
+            channel: Optional channel override for this request.
+            snapshot_version: Optional snapshot version (`v`) override.
 
         Returns:
             The translated string with parameters replaced if provided.
@@ -432,16 +443,17 @@ class TranslaasService(ITranslaasService):
         """
         client = self._ensure_client()
 
-        # Get translation from API
         translation = await client.get_entry(
             group=group,
             entry=entry,
             lang=lang,
             number=number,
             parameters=None,  # We handle parameters client-side
+            project=project if project is not None else self.options.default_project,
+            channel=channel,
+            snapshot_version=snapshot_version,
         )
 
-        # Replace parameters client-side
         if parameters:
             translation = self._replace_parameters(translation, parameters)
 
@@ -453,6 +465,10 @@ class TranslaasService(ITranslaasService):
         group: str,
         lang: str,
         format: Optional[str] = None,
+        *,
+        include_context: Optional[bool] = None,
+        channel: Optional[str] = None,
+        snapshot_version: Optional[str] = None,
     ) -> TranslationGroup:
         """Get a translation group.
 
@@ -463,6 +479,9 @@ class TranslaasService(ITranslaasService):
             group: The translation group name.
             lang: The language code (ISO 639-1).
             format: Optional format specification.
+            include_context: Optional `includeContext` override for this request.
+            channel: Optional channel override.
+            snapshot_version: Optional snapshot version (`v`) override.
 
         Returns:
             A TranslationGroup containing all entries in the group.
@@ -471,13 +490,25 @@ class TranslaasService(ITranslaasService):
             TranslaasApiException: If the API request fails.
         """
         client = self._ensure_client()
-        return await client.get_group(project=project, group=group, lang=lang, format=format)
+        return await client.get_group(
+            project=project,
+            group=group,
+            lang=lang,
+            format=format,
+            include_context=include_context,
+            channel=channel,
+            snapshot_version=snapshot_version,
+        )
 
     async def get_project(
         self,
         project: str,
         lang: str,
         format: Optional[str] = None,
+        *,
+        include_context: Optional[bool] = None,
+        channel: Optional[str] = None,
+        snapshot_version: Optional[str] = None,
     ) -> TranslationProject:
         """Get an entire translation project.
 
@@ -487,6 +518,9 @@ class TranslaasService(ITranslaasService):
             project: The project ID.
             lang: The language code (ISO 639-1).
             format: Optional format specification.
+            include_context: Optional `includeContext` override for this request.
+            channel: Optional channel override.
+            snapshot_version: Optional snapshot version (`v`) override.
 
         Returns:
             A TranslationProject containing all groups and entries.
@@ -495,11 +529,21 @@ class TranslaasService(ITranslaasService):
             TranslaasApiException: If the API request fails.
         """
         client = self._ensure_client()
-        return await client.get_project(project=project, lang=lang, format=format)
+        return await client.get_project(
+            project=project,
+            lang=lang,
+            format=format,
+            include_context=include_context,
+            channel=channel,
+            snapshot_version=snapshot_version,
+        )
 
     async def get_project_locales(
         self,
         project: str,
+        *,
+        channel: Optional[str] = None,
+        snapshot_version: Optional[str] = None,
     ) -> ProjectLocales:
         """Get the list of available locales for a project.
 
@@ -507,6 +551,8 @@ class TranslaasService(ITranslaasService):
 
         Args:
             project: The project ID.
+            channel: Optional channel override.
+            snapshot_version: Optional snapshot version (`v`) override.
 
         Returns:
             A ProjectLocales instance containing the list of available locales.
@@ -515,4 +561,35 @@ class TranslaasService(ITranslaasService):
             TranslaasApiException: If the API request fails.
         """
         client = self._ensure_client()
-        return await client.get_project_locales(project=project)
+        return await client.get_project_locales(
+            project=project,
+            channel=channel,
+            snapshot_version=snapshot_version,
+        )
+
+    async def report_missing_keys(self, keys: List[ReportMissingKeyItem]) -> None:
+        """Report missing translation keys (requires a project-scoped API key)."""
+        client = self._ensure_client()
+        await client.report_missing_keys(keys)
+
+    async def get_offline_cache(
+        self,
+        project: str,
+        *,
+        include_context: Optional[bool] = None,
+        channel: Optional[str] = None,
+        snapshot_version: Optional[str] = None,
+    ) -> bytes:
+        """Download the offline ZIP bundle for a project."""
+        client = self._ensure_client()
+        return await client.get_offline_cache(
+            project,
+            include_context=include_context,
+            channel=channel,
+            snapshot_version=snapshot_version,
+        )
+
+    async def validate_api_key(self) -> ValidateApiKeyResult:
+        """Validate the configured API key."""
+        client = self._ensure_client()
+        return await client.validate_api_key()

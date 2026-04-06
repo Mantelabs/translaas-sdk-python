@@ -4,7 +4,7 @@ Protocols use structural typing, so we test compliance by creating
 mock implementations that satisfy the protocol interface.
 """
 
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import pytest
 
@@ -15,6 +15,7 @@ from translaas.models.protocols import (
     ITranslaasService,
 )
 from translaas.models.responses import ProjectLocales, TranslationGroup, TranslationProject
+from translaas.models.sdk_payloads import ReportMissingKeyItem, ValidateApiKeyResult
 
 
 class MockTranslaasClient:
@@ -27,6 +28,10 @@ class MockTranslaasClient:
         lang: str,
         number: Optional[float] = None,
         parameters: Optional[Dict[str, str]] = None,
+        *,
+        project: Optional[str] = None,
+        channel: Optional[str] = None,
+        snapshot_version: Optional[str] = None,
     ) -> str:
         """Mock get_entry implementation."""
         return f"{group}.{entry}.{lang}"
@@ -37,6 +42,10 @@ class MockTranslaasClient:
         group: str,
         lang: str,
         format: Optional[str] = None,
+        *,
+        include_context: Optional[bool] = None,
+        channel: Optional[str] = None,
+        snapshot_version: Optional[str] = None,
     ) -> TranslationGroup:
         """Mock get_group implementation."""
         return TranslationGroup(entries={"test": "value"})
@@ -46,6 +55,10 @@ class MockTranslaasClient:
         project: str,
         lang: str,
         format: Optional[str] = None,
+        *,
+        include_context: Optional[bool] = None,
+        channel: Optional[str] = None,
+        snapshot_version: Optional[str] = None,
     ) -> TranslationProject:
         """Mock get_project implementation."""
         return TranslationProject(groups={"test": {}})
@@ -53,9 +66,37 @@ class MockTranslaasClient:
     async def get_project_locales(
         self,
         project: str,
+        *,
+        channel: Optional[str] = None,
+        snapshot_version: Optional[str] = None,
     ) -> ProjectLocales:
         """Mock get_project_locales implementation."""
         return ProjectLocales(locales=["en", "fr"])
+
+    async def report_missing_keys(self, keys: List[ReportMissingKeyItem]) -> None:
+        """Mock report_missing_keys."""
+        return None
+
+    async def get_offline_cache(
+        self,
+        project: str,
+        *,
+        include_context: Optional[bool] = None,
+        channel: Optional[str] = None,
+        snapshot_version: Optional[str] = None,
+    ) -> bytes:
+        """Mock offline cache download."""
+        return b"PK\x05\x06"
+
+    async def validate_api_key(self) -> ValidateApiKeyResult:
+        """Mock validate API key."""
+        return ValidateApiKeyResult(
+            is_valid=True,
+            tenant_id="01ARZ3NDEKTSV4RRFFQ69G5FAV",
+            project_id=None,
+            integration_name="test",
+            authenticated_at="2020-01-01T00:00:00Z",
+        )
 
 
 class MockTranslaasService:
@@ -134,6 +175,11 @@ class TestProtocolCompliance:
 
         locales = await client.get_project_locales("project")
         assert isinstance(locales, ProjectLocales)
+
+        await client.report_missing_keys([])
+        assert await client.get_offline_cache("p") == b"PK\x05\x06"
+        v = await client.validate_api_key()
+        assert v.is_valid is True
 
     @pytest.mark.asyncio
     async def test_translaas_service_protocol(self) -> None:

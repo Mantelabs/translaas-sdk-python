@@ -7,6 +7,23 @@ from typing import List, Optional
 from translaas.models.enums import CacheMode, OfflineFallbackMode
 
 
+def normalize_translaas_base_url(url: str) -> str:
+    """Normalize ``base_url`` for the HTTP client.
+
+    If the URL ends with ``/sdk/v1`` (case-insensitive), that segment is removed.
+    The client always requests paths like ``sdk/v1/translations/...`` relative to
+    this origin, so both of these are equivalent:
+
+    - ``https://api.translaas.local``
+    - ``https://api.translaas.local/sdk/v1``
+    """
+    u = url.strip().rstrip("/")
+    suffix = "/sdk/v1"
+    if u.lower().endswith(suffix):
+        u = u[: -len(suffix)].rstrip("/")
+    return u
+
+
 @dataclass
 class HybridCacheOptions:
     """Configuration options for hybrid caching (memory + file cache).
@@ -66,7 +83,10 @@ class TranslaasOptions:
 
     Attributes:
         api_key: API key for authenticating with the Translaas API. Required.
-        base_url: Base URL of the Translaas API. Required.
+        base_url: Origin of the Translaas API (scheme + host [+ port]), e.g.
+            ``https://api.translaas.local``. You may also paste ``.../sdk/v1``;
+            that suffix is stripped automatically because the client appends
+            ``sdk/v1/translations/...`` paths itself.
         cache_mode: Cache mode for translations. Defaults to NONE.
         timeout: Optional timeout for API requests.
         cache_absolute_expiration: Optional absolute expiration time for cache entries.
@@ -74,6 +94,12 @@ class TranslaasOptions:
         offline_cache: Optional offline cache configuration.
         default_language: Optional default language code to use when not specified.
         verify: Whether to verify SSL certificates. Defaults to True. Set to False for local development with self-signed certificates.
+        default_project: Optional default `project` query for single-text fetches (multi-project API keys).
+        channel: Optional SDK snapshot channel passed as query `channel`.
+        snapshot_version: Optional SDK snapshot version passed as query `v`.
+        include_context: Optional flag for `includeContext` on project/group/offline-cache requests.
+        use_conditional_requests: When True, reuse ETags with `If-None-Match` and handle 304 when caching is enabled.
+        api_key_header: HTTP header name for the API key.
 
     Raises:
         ValueError: If api_key or base_url is empty or None.
@@ -88,6 +114,18 @@ class TranslaasOptions:
     offline_cache: Optional[OfflineCacheOptions] = None
     default_language: Optional[str] = None
     verify: bool = True
+    #: Sent as `project` on SDK text calls when not overridden per request (tenant / multi-project keys).
+    default_project: Optional[str] = None
+    #: Optional release channel query (`channel`).
+    channel: Optional[str] = None
+    #: Optional snapshot / version query (`v`).
+    snapshot_version: Optional[str] = None
+    #: When set, adds `includeContext=true|false` on project, group, and offline-cache requests.
+    include_context: Optional[bool] = None
+    #: Send `If-None-Match` using the last ETag seen per resource key; on 304, return cached body when available.
+    use_conditional_requests: bool = False
+    #: Header name for the API key (default matches OpenAPI).
+    api_key_header: str = "X-Api-Key"
 
     def __post_init__(self) -> None:
         """Validate configuration options after initialization.
@@ -98,4 +136,7 @@ class TranslaasOptions:
         if not self.api_key or not isinstance(self.api_key, str) or not self.api_key.strip():
             raise ValueError("api_key is required and cannot be empty")
         if not self.base_url or not isinstance(self.base_url, str) or not self.base_url.strip():
+            raise ValueError("base_url is required and cannot be empty")
+        self.base_url = normalize_translaas_base_url(self.base_url)
+        if not self.base_url:
             raise ValueError("base_url is required and cannot be empty")

@@ -4,9 +4,10 @@ Protocols define the interfaces that implementations must follow.
 These use structural typing (duck typing) rather than inheritance.
 """
 
-from typing import Dict, Optional, Protocol, overload
+from typing import Dict, List, Optional, Protocol, overload
 
 from translaas.models.responses import ProjectLocales, TranslationGroup, TranslationProject
+from translaas.models.sdk_payloads import ReportMissingKeyItem, ValidateApiKeyResult
 
 
 class ITranslaasClient(Protocol):
@@ -23,22 +24,12 @@ class ITranslaasClient(Protocol):
         lang: str,
         number: Optional[float] = None,
         parameters: Optional[Dict[str, str]] = None,
+        *,
+        project: Optional[str] = None,
+        channel: Optional[str] = None,
+        snapshot_version: Optional[str] = None,
     ) -> str:
-        """Get a single translation entry.
-
-        Args:
-            group: The translation group name.
-            entry: The translation entry key.
-            lang: The language code (ISO 639-1).
-            number: Optional number for plural form selection.
-            parameters: Optional dictionary of parameters for string interpolation.
-
-        Returns:
-            The translated string.
-
-        Raises:
-            TranslaasApiException: If the API request fails.
-        """
+        """Get a single translation entry."""
         ...
 
     async def get_group(
@@ -47,21 +38,12 @@ class ITranslaasClient(Protocol):
         group: str,
         lang: str,
         format: Optional[str] = None,
+        *,
+        include_context: Optional[bool] = None,
+        channel: Optional[str] = None,
+        snapshot_version: Optional[str] = None,
     ) -> TranslationGroup:
-        """Get a translation group.
-
-        Args:
-            project: The project ID.
-            group: The translation group name.
-            lang: The language code (ISO 639-1).
-            format: Optional format specification.
-
-        Returns:
-            A TranslationGroup containing all entries in the group.
-
-        Raises:
-            TranslaasApiException: If the API request fails.
-        """
+        """Get a translation group."""
         ...
 
     async def get_project(
@@ -69,37 +51,41 @@ class ITranslaasClient(Protocol):
         project: str,
         lang: str,
         format: Optional[str] = None,
+        *,
+        include_context: Optional[bool] = None,
+        channel: Optional[str] = None,
+        snapshot_version: Optional[str] = None,
     ) -> TranslationProject:
-        """Get an entire translation project.
-
-        Args:
-            project: The project ID.
-            lang: The language code (ISO 639-1).
-            format: Optional format specification.
-
-        Returns:
-            A TranslationProject containing all groups and entries.
-
-        Raises:
-            TranslaasApiException: If the API request fails.
-        """
+        """Get an entire translation project."""
         ...
 
     async def get_project_locales(
         self,
         project: str,
+        *,
+        channel: Optional[str] = None,
+        snapshot_version: Optional[str] = None,
     ) -> ProjectLocales:
-        """Get the list of available locales for a project.
+        """Get the list of available locales for a project."""
+        ...
 
-        Args:
-            project: The project ID.
+    async def report_missing_keys(self, keys: List[ReportMissingKeyItem]) -> None:
+        """Report missing keys to the API."""
+        ...
 
-        Returns:
-            A ProjectLocales instance containing the list of available locales.
+    async def get_offline_cache(
+        self,
+        project: str,
+        *,
+        include_context: Optional[bool] = None,
+        channel: Optional[str] = None,
+        snapshot_version: Optional[str] = None,
+    ) -> bytes:
+        """Download offline translation ZIP bundle."""
+        ...
 
-        Raises:
-            TranslaasApiException: If the API request fails.
-        """
+    async def validate_api_key(self) -> ValidateApiKeyResult:
+        """Validate the configured API key."""
         ...
 
 
@@ -117,15 +103,7 @@ class ITranslaasService(Protocol):
         group: str,
         entry: str,
     ) -> str:
-        """Get translation without language (automatic resolution).
-
-        Args:
-            group: The translation group name.
-            entry: The translation entry key.
-
-        Returns:
-            The translated string.
-        """
+        """Get translation without language (automatic resolution)."""
         ...
 
     @overload
@@ -135,16 +113,7 @@ class ITranslaasService(Protocol):
         entry: str,
         number: float,
     ) -> str:
-        """Get translation with number for plural forms (automatic language resolution).
-
-        Args:
-            group: The translation group name.
-            entry: The translation entry key.
-            number: Number for plural form selection.
-
-        Returns:
-            The translated string with appropriate plural form.
-        """
+        """Get translation with number for plural forms (automatic language resolution)."""
         ...
 
     @overload
@@ -154,16 +123,7 @@ class ITranslaasService(Protocol):
         entry: str,
         parameters: Dict[str, str],
     ) -> str:
-        """Get translation with parameters (automatic language resolution).
-
-        Args:
-            group: The translation group name.
-            entry: The translation entry key.
-            parameters: Dictionary of parameters for string interpolation.
-
-        Returns:
-            The translated string with interpolated parameters.
-        """
+        """Get translation with parameters (automatic language resolution)."""
         ...
 
     @overload
@@ -173,16 +133,7 @@ class ITranslaasService(Protocol):
         entry: str,
         lang: str,
     ) -> str:
-        """Get translation with explicit language.
-
-        Args:
-            group: The translation group name.
-            entry: The translation entry key.
-            lang: The language code (ISO 639-1).
-
-        Returns:
-            The translated string.
-        """
+        """Get translation with explicit language."""
         ...
 
     @overload
@@ -193,17 +144,7 @@ class ITranslaasService(Protocol):
         lang: str,
         number: float,
     ) -> str:
-        """Get translation with explicit language and number for plural forms.
-
-        Args:
-            group: The translation group name.
-            entry: The translation entry key.
-            lang: The language code (ISO 639-1).
-            number: Number for plural form selection.
-
-        Returns:
-            The translated string with appropriate plural form.
-        """
+        """Get translation with explicit language and number for plural forms."""
         ...
 
     @overload
@@ -214,17 +155,7 @@ class ITranslaasService(Protocol):
         lang: str,
         parameters: Dict[str, str],
     ) -> str:
-        """Get translation with explicit language and parameters.
-
-        Args:
-            group: The translation group name.
-            entry: The translation entry key.
-            lang: The language code (ISO 639-1).
-            parameters: Dictionary of parameters for string interpolation.
-
-        Returns:
-            The translated string with interpolated parameters.
-        """
+        """Get translation with explicit language and parameters."""
         ...
 
     async def t(  # type: ignore[misc]
@@ -235,21 +166,7 @@ class ITranslaasService(Protocol):
         number: Optional[float] = None,
         parameters: Optional[Dict[str, str]] = None,
     ) -> str:
-        """Get translation (implementation method).
-
-        This is the actual implementation that handles all overloads.
-        The overloads above provide type hints for different call patterns.
-
-        Args:
-            group: The translation group name.
-            entry: The translation entry key.
-            lang: Optional language code (ISO 639-1). If None, uses automatic resolution.
-            number: Optional number for plural form selection.
-            parameters: Optional dictionary of parameters for string interpolation.
-
-        Returns:
-            The translated string.
-        """
+        """Get translation (implementation method)."""
         ...
 
 
@@ -261,14 +178,7 @@ class ITranslaasCacheProvider(Protocol):
     """
 
     def get(self, key: str) -> Optional[str]:
-        """Get a value from the cache.
-
-        Args:
-            key: The cache key.
-
-        Returns:
-            The cached value if found, or None if not found or expired.
-        """
+        """Get a value from the cache."""
         ...
 
     def set(
@@ -278,22 +188,11 @@ class ITranslaasCacheProvider(Protocol):
         absolute_expiration_ms: Optional[int] = None,
         sliding_expiration_ms: Optional[int] = None,
     ) -> None:
-        """Set a value in the cache.
-
-        Args:
-            key: The cache key.
-            value: The value to cache.
-            absolute_expiration_ms: Optional absolute expiration time in milliseconds.
-            sliding_expiration_ms: Optional sliding expiration time in milliseconds.
-        """
+        """Set a value in the cache."""
         ...
 
     def remove(self, key: str) -> None:
-        """Remove a value from the cache.
-
-        Args:
-            key: The cache key to remove.
-        """
+        """Remove a value from the cache."""
         ...
 
     def clear(self) -> None:
@@ -309,9 +208,5 @@ class ILanguageProvider(Protocol):
     """
 
     async def get_language(self) -> Optional[str]:
-        """Get the current language code.
-
-        Returns:
-            The language code (ISO 639-1) if found, or None if not available.
-        """
+        """Get the current language code."""
         ...
