@@ -1,5 +1,6 @@
 """Tests for Flask integration."""
 
+import asyncio
 from unittest.mock import Mock, patch
 
 import pytest
@@ -76,10 +77,16 @@ class TestFlaskTranslaas:
         translaas = FlaskTranslaas()
         translaas.init_app(app, options)
 
-        # Mock the async execution
+        # Mock the async execution (real ``run_until_complete`` must not drop the coroutine)
         mock_loop = Mock()
         mock_loop.is_running.return_value = False
-        mock_loop.run_until_complete.return_value = "translated"
+
+        def _run_coro(coro: object) -> str:
+            if asyncio.iscoroutine(coro):
+                coro.close()
+            return "translated"
+
+        mock_loop.run_until_complete.side_effect = _run_coro
         mock_asyncio.get_event_loop.return_value = mock_loop
 
         # Mock request context
