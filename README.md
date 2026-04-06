@@ -293,7 +293,7 @@ options = TranslaasOptions(
 
 ## Examples
 
-We provide example applications demonstrating how to use the Translaas SDK in different environments:
+Example applications are maintained under `examples/` but that directory is **not** tracked in this repository (see `.gitignore`). If you already have `examples/` locally—whether from a teammate, an internal package, or your own copy—the layout and commands below apply.
 
 ### Basic Python Example
 
@@ -307,8 +307,6 @@ pip install -r requirements.txt
 python main.py
 ```
 
-[View Basic Python Example →](examples/basic/)
-
 ### Flask Example
 
 Flask server with middleware integration and automatic language resolution from HTTP requests.
@@ -320,8 +318,6 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 python app.py
 ```
-
-[View Flask Example →](examples/flask/)
 
 ### FastAPI Example
 
@@ -335,8 +331,6 @@ pip install -r requirements.txt
 uvicorn main:app --reload
 ```
 
-[View FastAPI Example →](examples/fastapi/)
-
 ### Django Example
 
 Django application with middleware integration, template tags, and automatic language resolution.
@@ -348,8 +342,6 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 python manage.py runserver
 ```
-
-[View Django Example →](examples/django/)
 
 ## License
 

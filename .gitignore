@@ -158,3 +158,6 @@ Thumbs.db
 
 # PyPI credentials (contains API tokens)
 .pypirc
+
+# Example apps (local-only; keep secrets and venv out of version control)
+examples/
