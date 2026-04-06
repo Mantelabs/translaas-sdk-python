@@ -43,10 +43,10 @@ Quick reference guide for setting up PyPI publishing for the Translaas Python SD
 
 **Option A: Create a GitHub Release**
 1. Go to Releases → Create a new release
-2. Tag: `v0.1.0` (match version)
-3. Title: `Version 0.1.0`
+2. Tag: `vX.Y.Z` (must match `[project].version` in `pyproject.toml`, with a `v` prefix — e.g. `v0.3.0b1` for beta)
+3. Title: `Version X.Y.Z`
 4. Publish release
-5. Workflow runs automatically
+5. Workflow runs automatically and publishes the same build to **PyPI** and **Test PyPI** (both GitHub environments must exist and trusted publishing must be configured on each index)
 
 **Option B: Manual Workflow Dispatch**
 1. Actions → Release workflow → Run workflow
@@ -86,7 +86,10 @@ export TWINE_PASSWORD=pypi-xxxxxxxxxxxxx
 
 After publishing, verify:
 - Package appears on [https://pypi.org/project/translaas/](https://pypi.org/project/translaas/)
+- The same version appears on [https://test.pypi.org/project/translaas/](https://test.pypi.org/project/translaas/) when releases are published via the workflow above
 - Can install: `pip install translaas`
+- Test PyPI install (pulls dependencies from production PyPI):
+  `pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ "translaas==<version>"`
 - Version matches: `python -c "import translaas; print(translaas.__version__)"`
 
 ## Troubleshooting

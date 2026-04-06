@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "translaas"
-version = "0.1.2"
+version = "0.3.0b1"
 description = "A strongly-typed, performant, and modular Python SDK for consuming the Translaas Translation Delivery API"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -14,7 +14,7 @@ authors = [
 ]
 keywords = ["translation", "i18n", "localization", "sdk", "api"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
@@ -70,10 +70,10 @@ Repository = "https://github.com/acuencadev/translaas-sdk-python"
 Issues = "https://github.com/acuencadev/translaas-sdk-python/issues"
 
 [tool.setuptools]
-# Automatically discover all packages
-packages = {find = {}}
-# Or explicitly specify if needed:
-# packages = ["translaas"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["translaas*"]
 
 [tool.setuptools.package-data]
 translaas = ["py.typed"]
