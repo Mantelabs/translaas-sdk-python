@@ -41,6 +41,13 @@ class TestTranslaasOptions:
             cache_sliding_expiration=cache_expiration,
             offline_cache=offline_cache,
             default_language="en",
+            verify=False,
+            default_project="my-project",
+            channel="staging",
+            snapshot_version="2024.1",
+            include_context=True,
+            use_conditional_requests=True,
+            api_key_header="X-Custom-Api-Key",
         )
 
         assert options.api_key == "test-api-key"
@@ -50,6 +57,13 @@ class TestTranslaasOptions:
         assert options.cache_absolute_expiration == cache_expiration
         assert options.offline_cache == offline_cache
         assert options.default_language == "en"
+        assert options.verify is False
+        assert options.default_project == "my-project"
+        assert options.channel == "staging"
+        assert options.snapshot_version == "2024.1"
+        assert options.include_context is True
+        assert options.use_conditional_requests is True
+        assert options.api_key_header == "X-Custom-Api-Key"
 
     def test_validation_empty_api_key(self) -> None:
         """Test that empty api_key raises ValueError."""
