@@ -49,6 +49,9 @@ class TestTranslaasServiceIntegration:
                     lang="fr",
                     number=None,
                     parameters=None,
+                    project=None,
+                    channel=None,
+                    snapshot_version=None,
                 )
 
     @pytest.mark.asyncio
@@ -66,6 +69,9 @@ class TestTranslaasServiceIntegration:
                     lang="en",
                     number=None,
                     parameters=None,
+                    project=None,
+                    channel=None,
+                    snapshot_version=None,
                 )
 
     @pytest.mark.asyncio
@@ -86,6 +92,9 @@ class TestTranslaasServiceIntegration:
                     lang="fr",
                     number=5.0,
                     parameters=None,
+                    project=None,
+                    channel=None,
+                    snapshot_version=None,
                 )
 
     @pytest.mark.asyncio
@@ -165,7 +174,14 @@ class TestTranslaasServiceIntegration:
                 # Explicit language should override resolver
                 await service.t("group", "entry", "de")
                 mock_get.assert_called_once_with(
-                    group="group", entry="entry", lang="de", number=None, parameters=None
+                    group="group",
+                    entry="entry",
+                    lang="de",
+                    number=None,
+                    parameters=None,
+                    project=None,
+                    channel=None,
+                    snapshot_version=None,
                 )
 
     @pytest.mark.asyncio

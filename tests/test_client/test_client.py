@@ -15,6 +15,7 @@ from translaas.exceptions import TranslaasApiException, TranslaasConfigurationEx
 from translaas.models.enums import CacheMode
 from translaas.models.options import TranslaasOptions
 from translaas.models.responses import ProjectLocales, TranslationGroup, TranslationProject
+from translaas.models.sdk_payloads import ReportMissingKeyItem, ValidateApiKeyResult
 
 
 class TestTranslaasClientInitialization:
@@ -82,7 +83,7 @@ class TestTranslaasClientGetEntry:
         mock_response = httpx.Response(
             200,
             text="Hello, World!",
-            request=httpx.Request("GET", "https://api.test.com/api/translations/text"),
+            request=httpx.Request("GET", "https://api.test.com/sdk/v1/translations/text"),
         )
 
         with patch.object(
@@ -97,7 +98,7 @@ class TestTranslaasClientGetEntry:
         mock_response = httpx.Response(
             200,
             text="1 item",
-            request=httpx.Request("GET", "https://api.test.com/api/translations/text"),
+            request=httpx.Request("GET", "https://api.test.com/sdk/v1/translations/text"),
         )
 
         with patch.object(
@@ -112,7 +113,7 @@ class TestTranslaasClientGetEntry:
         mock_response = httpx.Response(
             200,
             text="Hello, John!",
-            request=httpx.Request("GET", "https://api.test.com/api/translations/text"),
+            request=httpx.Request("GET", "https://api.test.com/sdk/v1/translations/text"),
         )
 
         with patch.object(
@@ -144,7 +145,7 @@ class TestTranslaasClientGetEntry:
         mock_response = httpx.Response(
             200,
             text="API Value",
-            request=httpx.Request("GET", "https://api.test.com/api/translations/text"),
+            request=httpx.Request("GET", "https://api.test.com/sdk/v1/translations/text"),
         )
 
         async with TranslaasClient(options, cache_provider=cache_provider) as client:
@@ -163,7 +164,7 @@ class TestTranslaasClientGetEntry:
         mock_response = httpx.Response(
             404,
             text="Not Found",
-            request=httpx.Request("GET", "https://api.test.com/api/translations/text"),
+            request=httpx.Request("GET", "https://api.test.com/sdk/v1/translations/text"),
         )
 
         with patch.object(
@@ -208,7 +209,7 @@ class TestTranslaasClientGetGroup:
         mock_response = httpx.Response(
             200,
             json=response_data,
-            request=httpx.Request("GET", "https://api.test.com/api/translations/group"),
+            request=httpx.Request("GET", "https://api.test.com/sdk/v1/translations/group"),
         )
 
         with patch.object(
@@ -226,7 +227,7 @@ class TestTranslaasClientGetGroup:
         mock_response = httpx.Response(
             200,
             json=response_data,
-            request=httpx.Request("GET", "https://api.test.com/api/translations/group"),
+            request=httpx.Request("GET", "https://api.test.com/sdk/v1/translations/group"),
         )
 
         with patch.object(
@@ -234,6 +235,30 @@ class TestTranslaasClientGetGroup:
         ):
             result = await client.get_group("project1", "group1", "en", format="json")
             assert isinstance(result, TranslationGroup)
+
+    @pytest.mark.asyncio
+    async def test_get_group_structured_response(self, client: TranslaasClient) -> None:
+        """Group endpoint returns GetGroupTranslationsResponse with entries + metadata."""
+        response_data = {
+            "project": "p1",
+            "lang": "en",
+            "version": 3,
+            "entries": {"entry1": "value1"},
+            "entryContext": {"entry1": {"ctx": "meta"}},
+        }
+        mock_response = httpx.Response(
+            200,
+            json=response_data,
+            request=httpx.Request("GET", "https://api.test.com/sdk/v1/translations/group"),
+        )
+
+        with patch.object(
+            client._http_client, "get", new_callable=AsyncMock, return_value=mock_response
+        ):
+            result = await client.get_group("project1", "group1", "en")
+            assert result.get_value("entry1") == "value1"
+            assert result.version == 3
+            assert result.entry_context == {"entry1": {"ctx": "meta"}}
 
     @pytest.mark.asyncio
     async def test_get_group_with_cache_hit(
@@ -259,7 +284,7 @@ class TestTranslaasClientGetGroup:
         mock_response = httpx.Response(
             200,
             json=response_data,
-            request=httpx.Request("GET", "https://api.test.com/api/translations/group"),
+            request=httpx.Request("GET", "https://api.test.com/sdk/v1/translations/group"),
         )
 
         async with TranslaasClient(options, cache_provider=cache_provider) as client:
@@ -280,7 +305,7 @@ class TestTranslaasClientGetGroup:
         mock_response = httpx.Response(
             200,
             text="not json",
-            request=httpx.Request("GET", "https://api.test.com/api/translations/group"),
+            request=httpx.Request("GET", "https://api.test.com/sdk/v1/translations/group"),
         )
 
         with patch.object(
@@ -300,7 +325,7 @@ class TestTranslaasClientGetProject:
         mock_response = httpx.Response(
             200,
             json=response_data,
-            request=httpx.Request("GET", "https://api.test.com/api/translations/project"),
+            request=httpx.Request("GET", "https://api.test.com/sdk/v1/translations/project"),
         )
 
         with patch.object(
@@ -311,6 +336,28 @@ class TestTranslaasClientGetProject:
             group1 = result.get_group("group1")
             assert group1 is not None
             assert group1.get_value("entry1") == "value1"
+
+    @pytest.mark.asyncio
+    async def test_get_project_nested_groups_key(self, client: TranslaasClient) -> None:
+        """Project endpoint returns a `groups` object (nested JSON shape)."""
+        response_data = {
+            "groups": {"group1": {"entry1": "value1"}},
+            "groupEntryContext": {"group1": {"entry1": {"k": "v"}}},
+        }
+        mock_response = httpx.Response(
+            200,
+            json=response_data,
+            request=httpx.Request("GET", "https://api.test.com/sdk/v1/translations/project"),
+        )
+
+        with patch.object(
+            client._http_client, "get", new_callable=AsyncMock, return_value=mock_response
+        ):
+            result = await client.get_project("project1", "en")
+            g = result.get_group("group1")
+            assert g is not None
+            assert g.get_value("entry1") == "value1"
+            assert result.group_entry_context == {"group1": {"entry1": {"k": "v"}}}
 
     @pytest.mark.asyncio
     async def test_get_project_with_cache_hit(
@@ -335,7 +382,7 @@ class TestTranslaasClientGetProject:
         mock_response = httpx.Response(
             200,
             json=response_data,
-            request=httpx.Request("GET", "https://api.test.com/api/translations/project"),
+            request=httpx.Request("GET", "https://api.test.com/sdk/v1/translations/project"),
         )
 
         async with TranslaasClient(options, cache_provider=cache_provider) as client:
@@ -361,7 +408,7 @@ class TestTranslaasClientGetProjectLocales:
         mock_response = httpx.Response(
             200,
             json=response_data,
-            request=httpx.Request("GET", "https://api.test.com/api/translations/locales"),
+            request=httpx.Request("GET", "https://api.test.com/sdk/v1/translations/locales"),
         )
 
         with patch.object(
@@ -378,7 +425,7 @@ class TestTranslaasClientGetProjectLocales:
         mock_response = httpx.Response(
             200,
             json=response_data,
-            request=httpx.Request("GET", "https://api.test.com/api/translations/locales"),
+            request=httpx.Request("GET", "https://api.test.com/sdk/v1/translations/locales"),
         )
 
         with patch.object(
@@ -408,7 +455,7 @@ class TestTranslaasClientGetProjectLocales:
         mock_response = httpx.Response(
             200,
             json={"invalid": "data"},
-            request=httpx.Request("GET", "https://api.test.com/api/translations/locales"),
+            request=httpx.Request("GET", "https://api.test.com/sdk/v1/translations/locales"),
         )
 
         with patch.object(
@@ -431,7 +478,7 @@ class TestTranslaasClientCacheExpiration:
         mock_response = httpx.Response(
             200,
             text="Cached Value",
-            request=httpx.Request("GET", "https://api.test.com/api/translations/text"),
+            request=httpx.Request("GET", "https://api.test.com/sdk/v1/translations/text"),
         )
 
         async with TranslaasClient(options, cache_provider=cache_provider) as client:
@@ -454,7 +501,7 @@ class TestTranslaasClientCacheExpiration:
         mock_response = httpx.Response(
             200,
             text="Cached Value",
-            request=httpx.Request("GET", "https://api.test.com/api/translations/text"),
+            request=httpx.Request("GET", "https://api.test.com/sdk/v1/translations/text"),
         )
 
         async with TranslaasClient(options, cache_provider=cache_provider) as client:
@@ -465,6 +512,63 @@ class TestTranslaasClientCacheExpiration:
                 cache_key = "entry|group:group1|entry:entry1|lang:en"
                 cached_value = cache_provider.get(cache_key)
                 assert cached_value == "Cached Value"
+
+
+class TestTranslaasClientSdkExtras:
+    """Tests for validate, report-missing, and offline-cache endpoints."""
+
+    @pytest.mark.asyncio
+    async def test_validate_api_key(self, client: TranslaasClient) -> None:
+        """GET /api/v1/api-keys/validate returns ValidateApiKeyResult."""
+        mock_response = httpx.Response(
+            200,
+            json={
+                "isValid": True,
+                "tenantId": "01ARZ3NDEKTSV4RRFFQ69G5FAV",
+                "projectId": None,
+                "integrationName": "dev",
+                "authenticatedAt": "2024-01-01T00:00:00Z",
+            },
+            request=httpx.Request("GET", "https://api.test.com/api/v1/api-keys/validate"),
+        )
+        with patch.object(client._http_client, "get", new_callable=AsyncMock) as mock_get:
+            mock_get.return_value = mock_response
+            result = await client.validate_api_key()
+            assert isinstance(result, ValidateApiKeyResult)
+            assert result.is_valid is True
+            assert result.tenant_id == "01ARZ3NDEKTSV4RRFFQ69G5FAV"
+            mock_get.assert_called_once_with("api/v1/api-keys/validate")
+
+    @pytest.mark.asyncio
+    async def test_report_missing_keys(self, client: TranslaasClient) -> None:
+        """POST /sdk/v1/translations/report-missing with JSON body."""
+        mock_response = httpx.Response(
+            202,
+            request=httpx.Request(
+                "POST", "https://api.test.com/sdk/v1/translations/report-missing"
+            ),
+        )
+        keys = [ReportMissingKeyItem("g", "e", "en")]
+        with patch.object(client._http_client, "post", new_callable=AsyncMock) as mock_post:
+            mock_post.return_value = mock_response
+            await client.report_missing_keys(keys)
+        mock_post.assert_called_once_with(
+            "sdk/v1/translations/report-missing",
+            json={"keys": [{"groupKey": "g", "entryKey": "e", "languageIsoCode": "en"}]},
+        )
+
+    @pytest.mark.asyncio
+    async def test_get_offline_cache(self, client: TranslaasClient) -> None:
+        """GET /sdk/v1/translations/offline-cache returns raw bytes."""
+        mock_response = httpx.Response(
+            200,
+            content=b"ZIPBYTES",
+            request=httpx.Request("GET", "https://api.test.com/sdk/v1/translations/offline-cache"),
+        )
+        with patch.object(client._http_client, "get", new_callable=AsyncMock) as mock_get:
+            mock_get.return_value = mock_response
+            data = await client.get_offline_cache("proj1")
+            assert data == b"ZIPBYTES"
 
 
 class TestTranslaasClientErrorHandling:

@@ -148,7 +148,7 @@ def mock_httpx_response() -> httpx.Response:
     return httpx.Response(
         200,
         text="Hello, World!",
-        request=httpx.Request("GET", "https://api.test.com/api/translations/text"),
+        request=httpx.Request("GET", "https://api.test.com/sdk/v1/translations/text"),
     )
 
 
@@ -220,7 +220,7 @@ def mock_httpx_error_response() -> httpx.Response:
     return httpx.Response(
         404,
         text="Not Found",
-        request=httpx.Request("GET", "https://api.test.com/api/translations/text"),
+        request=httpx.Request("GET", "https://api.test.com/sdk/v1/translations/text"),
     )
 
 
@@ -234,7 +234,7 @@ def mock_httpx_server_error_response() -> httpx.Response:
     return httpx.Response(
         500,
         text="Internal Server Error",
-        request=httpx.Request("GET", "https://api.test.com/api/translations/text"),
+        request=httpx.Request("GET", "https://api.test.com/sdk/v1/translations/text"),
     )
 
 
