@@ -21,7 +21,7 @@ def translation_group_from_response(data: Any) -> TranslationGroup:
         )
     if "entries" in data and isinstance(data["entries"], dict):
         ec_raw = data.get("entryContext")
-        ec: Optional[Dict[str, Dict[str, str]]] = None
+        ec: Optional[dict[str, dict[str, str]]] = None
         if isinstance(ec_raw, dict):
             ec = cast(Dict[str, Dict[str, str]], ec_raw)
         ver = data.get("version")

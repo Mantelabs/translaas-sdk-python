@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 
 @dataclass(frozen=True)
@@ -14,7 +14,7 @@ class ReportMissingKeyItem:
     entry_key: str
     language_iso_code: str
 
-    def to_api_dict(self) -> Dict[str, Any]:
+    def to_api_dict(self) -> dict[str, Any]:
         return {
             "groupKey": self.group_key,
             "entryKey": self.entry_key,
@@ -33,7 +33,7 @@ class ValidateApiKeyResult:
     authenticated_at: Optional[str]
 
     @classmethod
-    def from_api_dict(cls, data: Dict[str, Any]) -> ValidateApiKeyResult:
+    def from_api_dict(cls, data: dict[str, Any]) -> ValidateApiKeyResult:
         def _str_or_none(val: Any) -> Optional[str]:
             if val is None:
                 return None
@@ -48,6 +48,6 @@ class ValidateApiKeyResult:
         )
 
 
-def report_missing_keys_body(keys: List[ReportMissingKeyItem]) -> Dict[str, Any]:
+def report_missing_keys_body(keys: list[ReportMissingKeyItem]) -> dict[str, Any]:
     """Build JSON body for `POST /sdk/v1/translations/report-missing`."""
     return {"keys": [k.to_api_dict() for k in keys]}

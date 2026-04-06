@@ -13,10 +13,6 @@ from translaas.models.options import (
     TranslaasOptions,
     normalize_translaas_base_url,
 )
-from translaas.models.sdk_payloads import (
-    ReportMissingKeyItem,
-    ValidateApiKeyResult,
-)
 
 # Protocols
 from translaas.models.protocols import (
@@ -31,6 +27,10 @@ from translaas.models.responses import (
     ProjectLocales,
     TranslationGroup,
     TranslationProject,
+)
+from translaas.models.sdk_payloads import (
+    ReportMissingKeyItem,
+    ValidateApiKeyResult,
 )
 
 # Type aliases

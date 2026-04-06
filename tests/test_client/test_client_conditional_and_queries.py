@@ -8,13 +8,12 @@ from unittest.mock import AsyncMock, patch
 import httpx
 import pytest
 
+from tests.conftest import MockCacheProvider
 from translaas.client.client import TranslaasClient
 from translaas.exceptions import TranslaasApiException
 from translaas.models.enums import CacheMode
 from translaas.models.options import TranslaasOptions
 from translaas.models.sdk_payloads import ReportMissingKeyItem
-
-from tests.conftest import MockCacheProvider
 
 
 def _params_from_get_call(mock_get: AsyncMock) -> dict[str, str]:

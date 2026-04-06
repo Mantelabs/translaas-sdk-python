@@ -9,7 +9,7 @@ from __future__ import annotations
 import asyncio
 import json
 from datetime import timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import httpx
 
@@ -88,9 +88,9 @@ class TranslaasClient(ITranslaasClient):
         self.options = options
         self.cache_provider = cache_provider
         self._http_client: Optional[httpx.AsyncClient] = None
-        self._etag_by_resource: Dict[str, str] = {}
+        self._etag_by_resource: dict[str, str] = {}
 
-    async def __aenter__(self) -> "TranslaasClient":
+    async def __aenter__(self) -> TranslaasClient:
         """Enter the async context manager.
 
         Initializes the HTTP client session.
@@ -145,17 +145,17 @@ class TranslaasClient(ITranslaasClient):
             )
         return self._http_client
 
-    def _sdk_query_base(self) -> Dict[str, str]:
+    def _sdk_query_base(self) -> dict[str, str]:
         """Shared SDK query parameters from options."""
-        out: Dict[str, str] = {}
+        out: dict[str, str] = {}
         if self.options.channel:
             out["channel"] = self.options.channel
         if self.options.snapshot_version:
             out["v"] = str(self.options.snapshot_version)
         return out
 
-    def _maybe_include_context(self, include_context: Optional[bool]) -> Dict[str, str]:
-        q: Dict[str, str] = {}
+    def _maybe_include_context(self, include_context: Optional[bool]) -> dict[str, str]:
+        q: dict[str, str] = {}
         ic = include_context if include_context is not None else self.options.include_context
         if ic is not None:
             q["includeContext"] = "true" if ic else "false"
@@ -170,7 +170,7 @@ class TranslaasClient(ITranslaasClient):
         lang: Optional[str] = None,
         format: Optional[str] = None,
         number: Optional[float] = None,
-        parameters: Optional[Dict[str, str]] = None,
+        parameters: Optional[dict[str, str]] = None,
         *,
         include_context: Optional[bool] = None,
     ) -> str:
@@ -226,12 +226,12 @@ class TranslaasClient(ITranslaasClient):
     async def _send_get(
         self,
         path: str,
-        params: Dict[str, str],
+        params: dict[str, str],
         *,
         etag: Optional[str] = None,
     ) -> httpx.Response:
         client = self._ensure_client()
-        headers: Dict[str, str] = {}
+        headers: dict[str, str] = {}
         if etag:
             headers["If-None-Match"] = etag
         try:
@@ -265,7 +265,7 @@ class TranslaasClient(ITranslaasClient):
         entry: str,
         lang: str,
         number: Optional[float] = None,
-        parameters: Optional[Dict[str, str]] = None,
+        parameters: Optional[dict[str, str]] = None,
         *,
         project: Optional[str] = None,
         channel: Optional[str] = None,
@@ -288,7 +288,7 @@ class TranslaasClient(ITranslaasClient):
             if cached_value is not None:
                 return cached_value
 
-        request_body: Dict[str, Any] = {
+        request_body: dict[str, Any] = {
             "group": group,
             "entry": entry,
             "lang": lang,
@@ -372,7 +372,7 @@ class TranslaasClient(ITranslaasClient):
                 except (json.JSONDecodeError, TypeError, ValueError, TranslaasApiException):
                     pass
 
-        request_body: Dict[str, str] = {
+        request_body: dict[str, str] = {
             "project": project,
             "group": group,
             "lang": lang,
@@ -465,7 +465,7 @@ class TranslaasClient(ITranslaasClient):
                 except (json.JSONDecodeError, TypeError, ValueError, TranslaasApiException):
                     pass
 
-        request_body: Dict[str, str] = {"project": project, "lang": lang}
+        request_body: dict[str, str] = {"project": project, "lang": lang}
         if format:
             request_body["format"] = format
         req = {
@@ -551,7 +551,7 @@ class TranslaasClient(ITranslaasClient):
                 except (json.JSONDecodeError, TypeError, ValueError, TranslaasApiException):
                     pass
 
-        request_body: Dict[str, str] = {"project": project}
+        request_body: dict[str, str] = {"project": project}
         req = {**self._sdk_query_base(), **request_body}
         if channel:
             req["channel"] = channel
@@ -609,7 +609,7 @@ class TranslaasClient(ITranslaasClient):
 
         return project_locales
 
-    async def report_missing_keys(self, keys: List[ReportMissingKeyItem]) -> None:
+    async def report_missing_keys(self, keys: list[ReportMissingKeyItem]) -> None:
         """Report missing translation keys (`POST /sdk/v1/translations/report-missing`)."""
         client = self._ensure_client()
         body = report_missing_keys_body(keys)
@@ -643,7 +643,7 @@ class TranslaasClient(ITranslaasClient):
         snapshot_version: Optional[str] = None,
     ) -> bytes:
         """Download the offline ZIP bundle (`GET /sdk/v1/translations/offline-cache`)."""
-        req: Dict[str, str] = {
+        req: dict[str, str] = {
             "project": project,
             **self._sdk_query_base(),
             **self._maybe_include_context(include_context),
