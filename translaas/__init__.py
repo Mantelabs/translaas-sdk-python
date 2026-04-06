@@ -14,7 +14,9 @@ from translaas.exceptions import (
 from translaas.models import (
     CacheMode,
     LanguageCodes,
+    ReportMissingKeyItem,
     TranslaasOptions,
+    ValidateApiKeyResult,
 )
 from translaas.service import TranslaasService
 
@@ -34,6 +36,8 @@ __all__ = [
     "create_api_exception_from_httpx_error",
     # Models
     "TranslaasOptions",
+    "ReportMissingKeyItem",
+    "ValidateApiKeyResult",
     "CacheMode",
     "LanguageCodes",
 ]
