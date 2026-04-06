@@ -328,7 +328,7 @@ class TranslaasClient(ITranslaasClient):
             raise create_api_exception_from_httpx_error(e) from e
 
         self._store_etag(cache_key, response)
-        response_text = response.text
+        response_text = str(response.text)
 
         if self._should_cache(self.options.cache_mode, "entry") and self.cache_provider is not None:
             absolute_expiration_ms = self._get_expiration_ms(self.options.cache_absolute_expiration)
@@ -669,7 +669,7 @@ class TranslaasClient(ITranslaasClient):
             raise create_api_exception_from_httpx_error(e) from e
 
         self._store_etag(cache_key, response)
-        return response.content
+        return bytes(response.content)
 
     async def validate_api_key(self) -> ValidateApiKeyResult:
         """Validate the configured API key (`GET /api/v1/api-keys/validate`)."""
