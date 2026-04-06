@@ -699,7 +699,7 @@ Update version for:
 The project uses GitHub Actions for automated releases. When you create a GitHub release, the workflow will automatically:
 1. Build the package
 2. Check the package
-3. Publish to PyPI
+3. Publish to **PyPI** and **Test PyPI** (same artifacts; requires the `pypi` and `test-pypi` environments and trusted publishing on both indexes)
 
 **Steps:**
 1. **Update version** in `pyproject.toml` and `translaas/__version__.py`:
@@ -722,6 +722,8 @@ The project uses GitHub Actions for automated releases. When you create a GitHub
    git push
    ```
 
+   Include `MANIFEST.in` in the commit when packaging layout or sdist includes change.
+
 4. **Create a GitHub release**:
    - Go to the repository's Releases page
    - Click "Create a new release"
@@ -729,7 +731,7 @@ The project uses GitHub Actions for automated releases. When you create a GitHub
    - Title: `Version 1.2.0`
    - Description: Copy from CHANGELOG.md
    - Click "Publish release"
-   - The GitHub Actions workflow will automatically build and publish to PyPI
+   - The GitHub Actions workflow will automatically build and publish to PyPI and Test PyPI
 
 **Manual Release Process:**
 
@@ -800,10 +802,11 @@ If you need to build and publish manually:
 
 #### Pre-Release Versions
 
-For pre-release versions, use version numbers like:
-- `0.1.0` - Initial pre-release
-- `0.2.0` - Pre-release with new features
-- `0.1.1` - Pre-release bug fix
+Publish prereleases with **PEP 440** versions (what PyPI accepts), for example:
+- `0.3.0b1`, `0.3.0b2` — beta
+- `0.3.0rc1` — release candidate
+
+Tag names use the same logical version with a `v` prefix (e.g. `v0.3.0b1`). Avoid non-PEP strings such as `0.3.0-beta` for package metadata.
 
 Once stable, release `1.0.0` as the first stable version.
 

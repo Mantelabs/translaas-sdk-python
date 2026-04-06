@@ -1,6 +1,14 @@
 # Translaas SDK
 
 ![Tests](https://github.com/acuencadev/translaas-sdk-python/workflows/CI/badge.svg)
+![PyPI version](https://img.shields.io/pypi/v/translaas)
+![PyPI downloads](https://img.shields.io/pypi/dm/translaas)
+![License](https://img.shields.io/pypi/l/translaas)
+![Python](https://img.shields.io/badge/Python-3.8+-3776AB)
+![PyPI - Python versions](https://img.shields.io/pypi/pyversions/translaas)
+![GitHub stars](https://img.shields.io/github/stars/acuencadev/translaas-sdk-python)
+![GitHub forks](https://img.shields.io/github/forks/acuencadev/translaas-sdk-python)
+![Code size](https://img.shields.io/github/languages/code-size/acuencadev/translaas-sdk-python)
 
 A strongly-typed, performant, and modular Python SDK for consuming the **Translaas Translation Delivery API**. This SDK provides a clean, easy-to-use way to retrieve translations in your Python applications.
 

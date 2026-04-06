@@ -1,0 +1,14 @@
+include LICENSE README.md CHANGELOG.md pyproject.toml
+graft translaas
+graft docs
+graft scripts
+
+recursive-exclude examples *
+prune tests
+prune examples
+prune .github
+prune venv
+prune .venv
+
+recursive-exclude * __pycache__
+global-exclude *.py[cod] *~

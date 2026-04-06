@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0b1] - 2026-04-06
+
+### Added
+
+- SDK HTTP paths aligned with the Translation Delivery API under `/sdk/v1/` (parity with the JavaScript SDK).
+- `translaas.client.parsing` helpers for translation groups, projects, and locales responses.
+- `TranslaasOptions` fields: `default_project`, `channel`, `snapshot_version`, `include_context`, `use_conditional_requests`, and `api_key_header`.
+- `normalize_translaas_base_url()` so `base_url` may omit or include `/sdk/v1` consistently.
+- `ReportMissingKeyItem` and `ValidateApiKeyResult` in `translaas.models.sdk_payloads`.
+- `TranslaasService` / client support for reporting missing keys and validating API keys.
+- Django settings: `TRANSLAAS_DEFAULT_PROJECT`, `TRANSLAAS_CHANNEL`, `TRANSLAAS_SNAPSHOT_VERSION` (extension wiring).
+
+### Changed
+
+- **Breaking:** In-repo framework examples under `examples/` were removed; local example apps belong outside the tracked tree (see `.gitignore` and README).
+
+### Fixed
+
+- Stronger response body typing when reading `httpx` responses in the client.
+- Source distributions are pruned to the intended tree (`MANIFEST.in` and explicit `translaas*` package discovery), so local `examples/` or `venv/` folders are not bundled into the sdist.
+
 ## [0.1.2] - 2026-01-16
 
 ### Added
@@ -55,7 +76,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Version management system
 - Development environment setup scripts
 
-[Unreleased]: https://github.com/acuencadev/translaas-sdk-python/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/acuencadev/translaas-sdk-python/compare/v0.3.0b1...HEAD
+[0.3.0b1]: https://github.com/acuencadev/translaas-sdk-python/compare/v0.1.2...v0.3.0b1
 [0.1.2]: https://github.com/acuencadev/translaas-sdk-python/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/acuencadev/translaas-sdk-python/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/acuencadev/translaas-sdk-python/releases/tag/v0.1.0
