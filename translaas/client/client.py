@@ -4,13 +4,20 @@ This module provides the TranslaasClient class, which handles all HTTP
 communication with the Translaas Translation Delivery API.
 """
 
+from __future__ import annotations
+
 import asyncio
 import json
 from datetime import timedelta
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import httpx
 
+from translaas.client.parsing import (
+    project_locales_from_response,
+    translation_group_from_response,
+    translation_project_from_response,
+)
 from translaas.exceptions import (
     TranslaasApiException,
     TranslaasConfigurationException,
@@ -20,6 +27,20 @@ from translaas.models.enums import CacheMode
 from translaas.models.options import TranslaasOptions
 from translaas.models.protocols import ITranslaasCacheProvider, ITranslaasClient
 from translaas.models.responses import ProjectLocales, TranslationGroup, TranslationProject
+from translaas.models.sdk_payloads import (
+    ReportMissingKeyItem,
+    ValidateApiKeyResult,
+    report_missing_keys_body,
+)
+
+# OpenAPI: /sdk/v1/translations/...
+_PATH_TEXT = "sdk/v1/translations/text"
+_PATH_LOCALES = "sdk/v1/translations/locales"
+_PATH_PROJECT = "sdk/v1/translations/project"
+_PATH_GROUP = "sdk/v1/translations/group"
+_PATH_REPORT_MISSING = "sdk/v1/translations/report-missing"
+_PATH_OFFLINE_CACHE = "sdk/v1/translations/offline-cache"
+_PATH_VALIDATE_KEY = "api/v1/api-keys/validate"
 
 
 class TranslaasClient(ITranslaasClient):
@@ -67,6 +88,7 @@ class TranslaasClient(ITranslaasClient):
         self.options = options
         self.cache_provider = cache_provider
         self._http_client: Optional[httpx.AsyncClient] = None
+        self._etag_by_resource: Dict[str, str] = {}
 
     async def __aenter__(self) -> "TranslaasClient":
         """Enter the async context manager.
@@ -81,10 +103,11 @@ class TranslaasClient(ITranslaasClient):
             timeout_seconds = self.options.timeout.total_seconds()
             timeout = httpx.Timeout(timeout_seconds, connect=timeout_seconds)
 
+        header_name = self.options.api_key_header.strip() or "X-Api-Key"
         self._http_client = httpx.AsyncClient(
             base_url=self.options.base_url.rstrip("/"),
             headers={
-                "X-Api-Key": self.options.api_key,
+                header_name: self.options.api_key,
             },
             timeout=timeout,
             verify=self.options.verify,
@@ -122,6 +145,22 @@ class TranslaasClient(ITranslaasClient):
             )
         return self._http_client
 
+    def _sdk_query_base(self) -> Dict[str, str]:
+        """Shared SDK query parameters from options."""
+        out: Dict[str, str] = {}
+        if self.options.channel:
+            out["channel"] = self.options.channel
+        if self.options.snapshot_version:
+            out["v"] = str(self.options.snapshot_version)
+        return out
+
+    def _maybe_include_context(self, include_context: Optional[bool]) -> Dict[str, str]:
+        q: Dict[str, str] = {}
+        ic = include_context if include_context is not None else self.options.include_context
+        if ic is not None:
+            q["includeContext"] = "true" if ic else "false"
+        return q
+
     def _build_cache_key(
         self,
         method: str,
@@ -132,22 +171,10 @@ class TranslaasClient(ITranslaasClient):
         format: Optional[str] = None,
         number: Optional[float] = None,
         parameters: Optional[Dict[str, str]] = None,
+        *,
+        include_context: Optional[bool] = None,
     ) -> str:
-        """Build a cache key from method parameters.
-
-        Args:
-            method: The method name (e.g., 'entry', 'group', 'project', 'locales').
-            project: Optional project ID.
-            group: Optional group name.
-            entry: Optional entry key.
-            lang: Optional language code.
-            format: Optional format specification.
-            number: Optional number for plural forms.
-            parameters: Optional parameters dictionary.
-
-        Returns:
-            A cache key string.
-        """
+        """Build a cache key from method parameters."""
         parts = [method]
         if project:
             parts.append(f"project:{project}")
@@ -162,23 +189,20 @@ class TranslaasClient(ITranslaasClient):
         if number is not None:
             parts.append(f"number:{number}")
         if parameters:
-            # Sort parameters for consistent cache keys
             sorted_params = sorted(parameters.items())
             param_str = ",".join(f"{k}={v}" for k, v in sorted_params)
             parts.append(f"params:{param_str}")
-
+        if self.options.channel:
+            parts.append(f"channel:{self.options.channel}")
+        if self.options.snapshot_version:
+            parts.append(f"v:{self.options.snapshot_version}")
+        ic_eff = include_context if include_context is not None else self.options.include_context
+        if ic_eff is not None:
+            parts.append(f"includeContext:{ic_eff}")
         return "|".join(parts)
 
     def _should_cache(self, cache_mode: CacheMode, method: str) -> bool:
-        """Check if caching should be used for a given method and cache mode.
-
-        Args:
-            cache_mode: The cache mode from options.
-            method: The method name ('entry', 'group', 'project', 'locales').
-
-        Returns:
-            True if caching should be used, False otherwise.
-        """
+        """Check if caching should be used for a given method and cache mode."""
         if cache_mode == CacheMode.NONE or self.cache_provider is None:
             return False
 
@@ -189,68 +213,29 @@ class TranslaasClient(ITranslaasClient):
         elif method == "project":
             return cache_mode == CacheMode.PROJECT
         elif method == "locales":
-            # Locales are typically cached regardless of mode
             return True
 
         return False
 
     def _get_expiration_ms(self, expiration: Optional[timedelta]) -> Optional[int]:
-        """Convert timedelta to milliseconds.
-
-        Args:
-            expiration: Optional timedelta expiration.
-
-        Returns:
-            Expiration in milliseconds, or None.
-        """
+        """Convert timedelta to milliseconds."""
         if expiration is None:
             return None
         return int(expiration.total_seconds() * 1000)
 
-    async def _make_request(
+    async def _send_get(
         self,
-        endpoint: str,
-        request_body: Dict[str, Any],
-        response_type: str = "json",
-    ) -> Any:
-        """Make an HTTP request to the API.
-
-        Args:
-            endpoint: The API endpoint path.
-            request_body: The request parameters as a dictionary (converted to query parameters).
-            response_type: The expected response type ('json' or 'text').
-
-        Returns:
-            The parsed response (dict for JSON, str for text).
-
-        Raises:
-            TranslaasApiException: If the API request fails.
-        """
+        path: str,
+        params: Dict[str, str],
+        *,
+        etag: Optional[str] = None,
+    ) -> httpx.Response:
         client = self._ensure_client()
-        # httpx.AsyncClient handles URL joining automatically when base_url is set
-        # Just use the endpoint path directly
-        url = endpoint.lstrip("/")
-
+        headers: Dict[str, str] = {}
+        if etag:
+            headers["If-None-Match"] = etag
         try:
-            # Convert request body dict to query parameters
-            # Filter out None values and convert to strings
-            # Parameters are spread directly (matching JavaScript implementation)
-            params: Dict[str, str] = {}
-            for key, value in request_body.items():
-                if value is not None:
-                    params[key] = str(value)
-
-            # Send GET request with query parameters
-            response = await client.get(url, params=params)
-            response.raise_for_status()
-
-            if response_type == "json":
-                return response.json()
-            else:
-                return response.text
-
-        except httpx.HTTPStatusError as e:
-            raise create_api_exception_from_httpx_error(e) from e
+            return await client.get(path, params=params, headers=headers)
         except httpx.RequestError as e:
             raise create_api_exception_from_httpx_error(
                 e, default_message="Failed to connect to Translaas API"
@@ -262,6 +247,18 @@ class TranslaasClient(ITranslaasClient):
                 f"Unexpected error during API request: {str(e)}", inner_error=e
             ) from e
 
+    def _store_etag(self, resource_key: str, response: httpx.Response) -> None:
+        if not self.options.use_conditional_requests:
+            return
+        etag = response.headers.get("etag") or response.headers.get("ETag")
+        if etag:
+            self._etag_by_resource[resource_key] = etag
+
+    def _if_none_match_for(self, resource_key: str) -> Optional[str]:
+        if not self.options.use_conditional_requests:
+            return None
+        return self._etag_by_resource.get(resource_key)
+
     async def get_entry(
         self,
         group: str,
@@ -269,52 +266,70 @@ class TranslaasClient(ITranslaasClient):
         lang: str,
         number: Optional[float] = None,
         parameters: Optional[Dict[str, str]] = None,
+        *,
+        project: Optional[str] = None,
+        channel: Optional[str] = None,
+        snapshot_version: Optional[str] = None,
     ) -> str:
-        """Get a single translation entry.
-
-        Args:
-            group: The translation group name.
-            entry: The translation entry key.
-            lang: The language code (ISO 639-1).
-            number: Optional number for plural form selection.
-            parameters: Optional dictionary of parameters for string interpolation.
-
-        Returns:
-            The translated string.
-
-        Raises:
-            TranslaasApiException: If the API request fails.
-        """
+        """Get a single translation entry."""
+        resolved_project = project if project is not None else self.options.default_project
         cache_key = self._build_cache_key(
-            "entry", group=group, entry=entry, lang=lang, number=number, parameters=parameters
+            "entry",
+            project=resolved_project,
+            group=group,
+            entry=entry,
+            lang=lang,
+            number=number,
+            parameters=parameters,
         )
 
-        # Check cache first if caching is enabled
         if self._should_cache(self.options.cache_mode, "entry") and self.cache_provider is not None:
             cached_value = self.cache_provider.get(cache_key)
             if cached_value is not None:
                 return cached_value
 
-        # Build request body - spread parameters directly into query params (matching JS implementation)
         request_body: Dict[str, Any] = {
             "group": group,
             "entry": entry,
             "lang": lang,
         }
+        if resolved_project:
+            request_body["project"] = resolved_project
         if number is not None:
             request_body["n"] = number
         if parameters:
-            # Spread parameters directly into query params, matching JavaScript implementation
             request_body.update(parameters)
+        req = self._sdk_query_base()
+        if channel:
+            req["channel"] = channel
+        if snapshot_version is not None:
+            req["v"] = str(snapshot_version)
+        for k, v in request_body.items():
+            if v is not None:
+                req[k] = str(v)
 
-        # Make API request
-        response_text_raw = await self._make_request(
-            "/api/translations/text", request_body, response_type="text"
-        )
-        # Ensure we return a string (mypy doesn't know _make_request returns str for text type)
-        response_text: str = str(response_text_raw)
+        ifnm = self._if_none_match_for(cache_key)
+        response = await self._send_get(_PATH_TEXT, req, etag=ifnm)
 
-        # Update cache if caching is enabled
+        if response.status_code == 304:
+            if self.cache_provider is not None:
+                cached_fallback = self.cache_provider.get(cache_key)
+                if cached_fallback is not None:
+                    return cached_fallback
+            raise TranslaasApiException(
+                "304 Not Modified but no cached translation is available; "
+                "enable caching for this key or disable use_conditional_requests.",
+                status_code=304,
+            )
+
+        try:
+            response.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            raise create_api_exception_from_httpx_error(e) from e
+
+        self._store_etag(cache_key, response)
+        response_text = response.text
+
         if self._should_cache(self.options.cache_mode, "entry") and self.cache_provider is not None:
             absolute_expiration_ms = self._get_expiration_ms(self.options.cache_absolute_expiration)
             sliding_expiration_ms = self._get_expiration_ms(self.options.cache_sliding_expiration)
@@ -333,59 +348,79 @@ class TranslaasClient(ITranslaasClient):
         group: str,
         lang: str,
         format: Optional[str] = None,
+        *,
+        include_context: Optional[bool] = None,
+        channel: Optional[str] = None,
+        snapshot_version: Optional[str] = None,
     ) -> TranslationGroup:
-        """Get a translation group.
-
-        Args:
-            project: The project ID.
-            group: The translation group name.
-            lang: The language code (ISO 639-1).
-            format: Optional format specification.
-
-        Returns:
-            A TranslationGroup containing all entries in the group.
-
-        Raises:
-            TranslaasApiException: If the API request fails.
-        """
+        """Get a translation group."""
         cache_key = self._build_cache_key(
-            "group", project=project, group=group, lang=lang, format=format
+            "group",
+            project=project,
+            group=group,
+            lang=lang,
+            format=format,
+            include_context=include_context,
         )
 
-        # Check cache first if caching is enabled
         if self._should_cache(self.options.cache_mode, "group") and self.cache_provider is not None:
             cached_value = self.cache_provider.get(cache_key)
             if cached_value is not None:
                 try:
-                    cached_data = json.loads(cached_value)
-                    return TranslationGroup(entries=cached_data)
-                except (json.JSONDecodeError, TypeError, ValueError):
-                    # Cache data is corrupted, continue to API
+                    cached_raw = json.loads(cached_value)
+                    return translation_group_from_response(cached_raw)
+                except (json.JSONDecodeError, TypeError, ValueError, TranslaasApiException):
                     pass
 
-        # Build request body
-        request_body: Dict[str, Any] = {
+        request_body: Dict[str, str] = {
             "project": project,
             "group": group,
             "lang": lang,
         }
         if format:
             request_body["format"] = format
+        req = {
+            **self._sdk_query_base(),
+            **request_body,
+            **self._maybe_include_context(include_context),
+        }
+        if channel:
+            req["channel"] = channel
+        if snapshot_version is not None:
+            req["v"] = str(snapshot_version)
 
-        # Make API request
-        response_data = await self._make_request(
-            "/api/translations/group", request_body, response_type="json"
-        )
+        ifnm = self._if_none_match_for(cache_key)
+        response = await self._send_get(_PATH_GROUP, req, etag=ifnm)
 
-        # Parse response
-        if not isinstance(response_data, dict):
+        if response.status_code == 304:
+            if self.cache_provider is not None:
+                cached_fallback = self.cache_provider.get(cache_key)
+                if cached_fallback is not None:
+                    return translation_group_from_response(json.loads(cached_fallback))
             raise TranslaasApiException(
-                f"Invalid response format: expected dict, got {type(response_data).__name__}"
+                "304 Not Modified but no cached group payload is available.",
+                status_code=304,
             )
 
-        translation_group = TranslationGroup(entries=response_data)
+        try:
+            response.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            raise create_api_exception_from_httpx_error(e) from e
 
-        # Update cache if caching is enabled
+        self._store_etag(cache_key, response)
+        try:
+            response_data = response.json()
+        except json.JSONDecodeError as e:
+            raise TranslaasApiException(
+                "Invalid JSON in group translations response",
+                inner_error=e,
+            ) from e
+        if not isinstance(response_data, dict):
+            raise TranslaasApiException(
+                f"Invalid response format: expected dict, got {type(response_data).__name__}",
+            )
+        translation_group = translation_group_from_response(response_data)
+
         if self._should_cache(self.options.cache_mode, "group") and self.cache_provider is not None:
             cache_value = json.dumps(response_data)
             absolute_expiration_ms = self._get_expiration_ms(self.options.cache_absolute_expiration)
@@ -404,23 +439,20 @@ class TranslaasClient(ITranslaasClient):
         project: str,
         lang: str,
         format: Optional[str] = None,
+        *,
+        include_context: Optional[bool] = None,
+        channel: Optional[str] = None,
+        snapshot_version: Optional[str] = None,
     ) -> TranslationProject:
-        """Get an entire translation project.
+        """Get an entire translation project."""
+        cache_key = self._build_cache_key(
+            "project",
+            project=project,
+            lang=lang,
+            format=format,
+            include_context=include_context,
+        )
 
-        Args:
-            project: The project ID.
-            lang: The language code (ISO 639-1).
-            format: Optional format specification.
-
-        Returns:
-            A TranslationProject containing all groups and entries.
-
-        Raises:
-            TranslaasApiException: If the API request fails.
-        """
-        cache_key = self._build_cache_key("project", project=project, lang=lang, format=format)
-
-        # Check cache first if caching is enabled
         if (
             self._should_cache(self.options.cache_mode, "project")
             and self.cache_provider is not None
@@ -428,34 +460,56 @@ class TranslaasClient(ITranslaasClient):
             cached_value = self.cache_provider.get(cache_key)
             if cached_value is not None:
                 try:
-                    cached_data = json.loads(cached_value)
-                    return TranslationProject(groups=cached_data)
-                except (json.JSONDecodeError, TypeError, ValueError):
-                    # Cache data is corrupted, continue to API
+                    cached_raw = json.loads(cached_value)
+                    return translation_project_from_response(cached_raw)
+                except (json.JSONDecodeError, TypeError, ValueError, TranslaasApiException):
                     pass
 
-        # Build request body
-        request_body: Dict[str, Any] = {
-            "project": project,
-            "lang": lang,
-        }
+        request_body: Dict[str, str] = {"project": project, "lang": lang}
         if format:
             request_body["format"] = format
+        req = {
+            **self._sdk_query_base(),
+            **request_body,
+            **self._maybe_include_context(include_context),
+        }
+        if channel:
+            req["channel"] = channel
+        if snapshot_version is not None:
+            req["v"] = str(snapshot_version)
 
-        # Make API request
-        response_data = await self._make_request(
-            "/api/translations/project", request_body, response_type="json"
-        )
+        ifnm = self._if_none_match_for(cache_key)
+        response = await self._send_get(_PATH_PROJECT, req, etag=ifnm)
 
-        # Parse response
-        if not isinstance(response_data, dict):
+        if response.status_code == 304:
+            if self.cache_provider is not None:
+                cached_fallback = self.cache_provider.get(cache_key)
+                if cached_fallback is not None:
+                    return translation_project_from_response(json.loads(cached_fallback))
             raise TranslaasApiException(
-                f"Invalid response format: expected dict, got {type(response_data).__name__}"
+                "304 Not Modified but no cached project payload is available.",
+                status_code=304,
             )
 
-        translation_project = TranslationProject(groups=response_data)
+        try:
+            response.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            raise create_api_exception_from_httpx_error(e) from e
 
-        # Update cache if caching is enabled
+        self._store_etag(cache_key, response)
+        try:
+            response_data = response.json()
+        except json.JSONDecodeError as e:
+            raise TranslaasApiException(
+                "Invalid JSON in project translations response",
+                inner_error=e,
+            ) from e
+        if not isinstance(response_data, dict):
+            raise TranslaasApiException(
+                f"Invalid response format: expected dict, got {type(response_data).__name__}",
+            )
+        translation_project = translation_project_from_response(response_data)
+
         if (
             self._should_cache(self.options.cache_mode, "project")
             and self.cache_provider is not None
@@ -475,21 +529,13 @@ class TranslaasClient(ITranslaasClient):
     async def get_project_locales(
         self,
         project: str,
+        *,
+        channel: Optional[str] = None,
+        snapshot_version: Optional[str] = None,
     ) -> ProjectLocales:
-        """Get the list of available locales for a project.
-
-        Args:
-            project: The project ID.
-
-        Returns:
-            A ProjectLocales instance containing the list of available locales.
-
-        Raises:
-            TranslaasApiException: If the API request fails.
-        """
+        """Get the list of available locales for a project."""
         cache_key = self._build_cache_key("locales", project=project)
 
-        # Check cache first if caching is enabled
         if (
             self._should_cache(self.options.cache_mode, "locales")
             and self.cache_provider is not None
@@ -497,44 +543,61 @@ class TranslaasClient(ITranslaasClient):
             cached_value = self.cache_provider.get(cache_key)
             if cached_value is not None:
                 try:
-                    cached_data = json.loads(cached_value)
-                    if isinstance(cached_data, list):
-                        return ProjectLocales(locales=cached_data)
-                except (json.JSONDecodeError, TypeError, ValueError):
-                    # Cache data is corrupted, continue to API
+                    cached_raw = json.loads(cached_value)
+                    if isinstance(cached_raw, list):
+                        return ProjectLocales(locales=cached_raw)
+                    if isinstance(cached_raw, dict):
+                        return project_locales_from_response(cached_raw)
+                except (json.JSONDecodeError, TypeError, ValueError, TranslaasApiException):
                     pass
 
-        # Build request body
-        request_body: Dict[str, Any] = {"project": project}
+        request_body: Dict[str, str] = {"project": project}
+        req = {**self._sdk_query_base(), **request_body}
+        if channel:
+            req["channel"] = channel
+        if snapshot_version is not None:
+            req["v"] = str(snapshot_version)
 
-        # Make API request
-        response_data = await self._make_request(
-            "/api/translations/locales", request_body, response_type="json"
-        )
+        ifnm = self._if_none_match_for(cache_key)
+        response = await self._send_get(_PATH_LOCALES, req, etag=ifnm)
 
-        # Parse response
-        if isinstance(response_data, dict) and "locales" in response_data:
-            locales_list = response_data["locales"]
-        elif isinstance(response_data, list):
-            locales_list = response_data
-        else:
+        if response.status_code == 304:
+            if self.cache_provider is not None:
+                cached_fallback = self.cache_provider.get(cache_key)
+                if cached_fallback is not None:
+                    raw = json.loads(cached_fallback)
+                    if isinstance(raw, list):
+                        return ProjectLocales(locales=raw)
+                    if isinstance(raw, dict):
+                        return project_locales_from_response(raw)
             raise TranslaasApiException(
-                f"Invalid response format: expected dict with 'locales' key or list, got {type(response_data).__name__}"
+                "304 Not Modified but no cached locales payload is available.",
+                status_code=304,
             )
 
-        if not isinstance(locales_list, list):
+        try:
+            response.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            raise create_api_exception_from_httpx_error(e) from e
+
+        self._store_etag(cache_key, response)
+        try:
+            response_data = response.json()
+        except json.JSONDecodeError as e:
             raise TranslaasApiException(
-                f"Invalid locales format: expected list, got {type(locales_list).__name__}"
-            )
+                "Invalid JSON in project locales response",
+                inner_error=e,
+            ) from e
+        project_locales = project_locales_from_response(response_data)
 
-        project_locales = ProjectLocales(locales=locales_list)
-
-        # Update cache if caching is enabled
         if (
             self._should_cache(self.options.cache_mode, "locales")
             and self.cache_provider is not None
         ):
-            cache_value = json.dumps(locales_list)
+            if isinstance(response_data, dict):
+                cache_value = json.dumps(response_data)
+            else:
+                cache_value = json.dumps(project_locales.locales)
             absolute_expiration_ms = self._get_expiration_ms(self.options.cache_absolute_expiration)
             sliding_expiration_ms = self._get_expiration_ms(self.options.cache_sliding_expiration)
             self.cache_provider.set(
@@ -545,3 +608,91 @@ class TranslaasClient(ITranslaasClient):
             )
 
         return project_locales
+
+    async def report_missing_keys(self, keys: List[ReportMissingKeyItem]) -> None:
+        """Report missing translation keys (`POST /sdk/v1/translations/report-missing`)."""
+        client = self._ensure_client()
+        body = report_missing_keys_body(keys)
+        try:
+            response = await client.post(
+                _PATH_REPORT_MISSING,
+                json=body,
+            )
+            if response.status_code == 202:
+                return
+            response.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            raise create_api_exception_from_httpx_error(e) from e
+        except httpx.RequestError as e:
+            raise create_api_exception_from_httpx_error(
+                e, default_message="Failed to connect to Translaas API"
+            ) from e
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:
+            raise TranslaasApiException(
+                f"Unexpected error during API request: {str(e)}", inner_error=e
+            ) from e
+
+    async def get_offline_cache(
+        self,
+        project: str,
+        *,
+        include_context: Optional[bool] = None,
+        channel: Optional[str] = None,
+        snapshot_version: Optional[str] = None,
+    ) -> bytes:
+        """Download the offline ZIP bundle (`GET /sdk/v1/translations/offline-cache`)."""
+        req: Dict[str, str] = {
+            "project": project,
+            **self._sdk_query_base(),
+            **self._maybe_include_context(include_context),
+        }
+        if channel:
+            req["channel"] = channel
+        if snapshot_version is not None:
+            req["v"] = str(snapshot_version)
+
+        cache_key = f"offline|project:{project}|{req.get('channel','')}|{req.get('v','')}|{req.get('includeContext','')}"
+        ifnm = self._if_none_match_for(cache_key)
+        response = await self._send_get(_PATH_OFFLINE_CACHE, req, etag=ifnm)
+
+        if response.status_code == 304:
+            raise TranslaasApiException(
+                "304 Not Modified for offline cache; persist the last ZIP locally if you need 304 handling.",
+                status_code=304,
+            )
+
+        try:
+            response.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            raise create_api_exception_from_httpx_error(e) from e
+
+        self._store_etag(cache_key, response)
+        return response.content
+
+    async def validate_api_key(self) -> ValidateApiKeyResult:
+        """Validate the configured API key (`GET /api/v1/api-keys/validate`)."""
+        client = self._ensure_client()
+        try:
+            response = await client.get(_PATH_VALIDATE_KEY)
+            response.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            raise create_api_exception_from_httpx_error(e) from e
+        except httpx.RequestError as e:
+            raise create_api_exception_from_httpx_error(
+                e, default_message="Failed to connect to Translaas API"
+            ) from e
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:
+            raise TranslaasApiException(
+                f"Unexpected error during API request: {str(e)}", inner_error=e
+            ) from e
+
+        data = response.json()
+        if not isinstance(data, dict):
+            raise TranslaasApiException(
+                f"Invalid validate response: expected object, got {type(data).__name__}",
+            )
+        return ValidateApiKeyResult.from_api_dict(data)
