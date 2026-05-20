@@ -12,6 +12,7 @@ from translaas.caching_file.caching_client import CachingTranslaasClient
 from translaas.exceptions import TranslaasOfflineCacheMissException
 from translaas.models.enums import OfflineFallbackMode
 from translaas.models.options import OfflineCacheOptions
+from translaas.models.request_context import TranslaasRequestContext
 from translaas.models.responses import TranslationGroup, TranslationProject
 from translaas.models.sdk_payloads import ValidateApiKeyResult
 
@@ -283,6 +284,20 @@ async def test_get_entry_cache_only_missing_entry_raises(
     client = _create_client(inner_client, cache, OfflineFallbackMode.CACHE_ONLY, offline_options)
     with pytest.raises(TranslaasOfflineCacheMissException):
         await client.get_entry("common", "missing", "en")
+
+
+@pytest.mark.asyncio
+async def test_get_entry_api_first_forwards_request_context(
+    inner_client: AsyncMock, offline_options: OfflineCacheOptions
+) -> None:
+    cache = _MockOfflineCache()
+    inner_client.get_entry.side_effect = httpx.ConnectError("offline")
+    client = _create_client(inner_client, cache, OfflineFallbackMode.API_FIRST, offline_options)
+    ctx = TranslaasRequestContext(channel="beta", if_none_match='"etag"')
+    with pytest.raises(TranslaasOfflineCacheMissException):
+        await client.get_entry("common", "welcome", "en", request_context=ctx)
+    inner_client.get_entry.assert_awaited_once()
+    assert inner_client.get_entry.await_args.kwargs["request_context"] == ctx
 
 
 @pytest.mark.asyncio

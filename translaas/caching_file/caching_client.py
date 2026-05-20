@@ -17,6 +17,7 @@ from translaas.i18n.plural_resolver import PluralResolver
 from translaas.models.enums import OfflineFallbackMode, PluralCategory
 from translaas.models.options import OfflineCacheOptions
 from translaas.models.protocols import ITranslaasClient
+from translaas.models.request_context import TranslaasRequestContext
 from translaas.models.responses import (
     OfflineCacheDownloadResult,
     ProjectLocales,
@@ -107,13 +108,18 @@ class CachingTranslaasClient(ITranslaasClient):
         project: Optional[str] = None,
         channel: Optional[str] = None,
         snapshot_version: Optional[str] = None,
+        request_context: Optional[TranslaasRequestContext] = None,
     ) -> str:
         del project, channel, snapshot_version
         mode = self._options.fallback_mode
         if mode == OfflineFallbackMode.CACHE_FIRST:
-            return await self._get_entry_cache_first(group, entry, lang, number, parameters)
+            return await self._get_entry_cache_first(
+                group, entry, lang, number, parameters, request_context
+            )
         if mode == OfflineFallbackMode.API_FIRST:
-            return await self._get_entry_api_first(group, entry, lang, number, parameters)
+            return await self._get_entry_api_first(
+                group, entry, lang, number, parameters, request_context
+            )
         if mode == OfflineFallbackMode.CACHE_ONLY:
             return await self._get_entry_cache_only(group, entry, lang, number, parameters)
         return await self._inner.get_entry(
@@ -123,6 +129,7 @@ class CachingTranslaasClient(ITranslaasClient):
             number=number,
             parameters=parameters,
             project=self._project_id,
+            request_context=request_context,
         )
 
     async def get_group(
@@ -135,15 +142,30 @@ class CachingTranslaasClient(ITranslaasClient):
         include_context: Optional[bool] = None,
         channel: Optional[str] = None,
         snapshot_version: Optional[str] = None,
+        request_context: Optional[TranslaasRequestContext] = None,
     ) -> TranslationGroup:
         mode = self._options.fallback_mode
         if mode == OfflineFallbackMode.CACHE_FIRST:
             return await self._get_group_cache_first(
-                project, group, lang, format, include_context, channel, snapshot_version
+                project,
+                group,
+                lang,
+                format,
+                include_context,
+                channel,
+                snapshot_version,
+                request_context,
             )
         if mode == OfflineFallbackMode.API_FIRST:
             return await self._get_group_api_first(
-                project, group, lang, format, include_context, channel, snapshot_version
+                project,
+                group,
+                lang,
+                format,
+                include_context,
+                channel,
+                snapshot_version,
+                request_context,
             )
         if mode == OfflineFallbackMode.CACHE_ONLY:
             return await self._get_group_cache_only(project, group, lang)
@@ -155,6 +177,7 @@ class CachingTranslaasClient(ITranslaasClient):
             include_context=include_context,
             channel=channel,
             snapshot_version=snapshot_version,
+            request_context=request_context,
         )
 
     async def get_project(
@@ -166,15 +189,28 @@ class CachingTranslaasClient(ITranslaasClient):
         include_context: Optional[bool] = None,
         channel: Optional[str] = None,
         snapshot_version: Optional[str] = None,
+        request_context: Optional[TranslaasRequestContext] = None,
     ) -> TranslationProject:
         mode = self._options.fallback_mode
         if mode == OfflineFallbackMode.CACHE_FIRST:
             return await self._get_project_cache_first(
-                project, lang, format, include_context, channel, snapshot_version
+                project,
+                lang,
+                format,
+                include_context,
+                channel,
+                snapshot_version,
+                request_context,
             )
         if mode == OfflineFallbackMode.API_FIRST:
             return await self._get_project_api_first(
-                project, lang, format, include_context, channel, snapshot_version
+                project,
+                lang,
+                format,
+                include_context,
+                channel,
+                snapshot_version,
+                request_context,
             )
         if mode == OfflineFallbackMode.CACHE_ONLY:
             return await self._get_project_cache_only(project, lang)
@@ -185,6 +221,7 @@ class CachingTranslaasClient(ITranslaasClient):
             include_context=include_context,
             channel=channel,
             snapshot_version=snapshot_version,
+            request_context=request_context,
         )
 
     async def get_project_locales(
@@ -193,16 +230,24 @@ class CachingTranslaasClient(ITranslaasClient):
         *,
         channel: Optional[str] = None,
         snapshot_version: Optional[str] = None,
+        request_context: Optional[TranslaasRequestContext] = None,
     ) -> ProjectLocales:
         mode = self._options.fallback_mode
         if mode == OfflineFallbackMode.CACHE_FIRST:
-            return await self._get_locales_cache_first(project, channel, snapshot_version)
+            return await self._get_locales_cache_first(
+                project, channel, snapshot_version, request_context
+            )
         if mode == OfflineFallbackMode.API_FIRST:
-            return await self._get_locales_api_first(project, channel, snapshot_version)
+            return await self._get_locales_api_first(
+                project, channel, snapshot_version, request_context
+            )
         if mode == OfflineFallbackMode.CACHE_ONLY:
             return await self._get_locales_cache_only(project)
         return await self._inner.get_project_locales(
-            project, channel=channel, snapshot_version=snapshot_version
+            project,
+            channel=channel,
+            snapshot_version=snapshot_version,
+            request_context=request_context,
         )
 
     async def report_missing_keys(self, keys: list[ReportMissingKeyItem]) -> None:
@@ -215,12 +260,14 @@ class CachingTranslaasClient(ITranslaasClient):
         include_context: Optional[bool] = None,
         channel: Optional[str] = None,
         snapshot_version: Optional[str] = None,
+        request_context: Optional[TranslaasRequestContext] = None,
     ) -> OfflineCacheDownloadResult:
         return await self._inner.get_offline_cache(
             project,
             include_context=include_context,
             channel=channel,
             snapshot_version=snapshot_version,
+            request_context=request_context,
         )
 
     async def validate_api_key(self) -> ValidateApiKeyResult:
@@ -235,6 +282,7 @@ class CachingTranslaasClient(ITranslaasClient):
         lang: str,
         number: Optional[float],
         parameters: Optional[Dict[str, str]],
+        request_context: Optional[TranslaasRequestContext] = None,
     ) -> str:
         cached_group = self._cache.get_group(self._project_id, group, lang)
         resolved = self._resolve_entry_from_group(cached_group, entry, lang, number, parameters)
@@ -248,6 +296,7 @@ class CachingTranslaasClient(ITranslaasClient):
                 number=number,
                 parameters=parameters,
                 project=self._project_id,
+                request_context=request_context,
             )
             try:
                 await self._update_group_cache(self._project_id, group, lang)
@@ -266,6 +315,7 @@ class CachingTranslaasClient(ITranslaasClient):
         lang: str,
         number: Optional[float],
         parameters: Optional[Dict[str, str]],
+        request_context: Optional[TranslaasRequestContext] = None,
     ) -> str:
         try:
             result = await self._inner.get_entry(
@@ -275,6 +325,7 @@ class CachingTranslaasClient(ITranslaasClient):
                 number=number,
                 parameters=parameters,
                 project=self._project_id,
+                request_context=request_context,
             )
             try:
                 await self._update_group_cache(self._project_id, group, lang)
@@ -339,6 +390,7 @@ class CachingTranslaasClient(ITranslaasClient):
         include_context: Optional[bool],
         channel: Optional[str],
         snapshot_version: Optional[str],
+        request_context: Optional[TranslaasRequestContext] = None,
     ) -> TranslationGroup:
         cached = self._cache.get_group(project, group, lang)
         if cached is not None:
@@ -352,6 +404,7 @@ class CachingTranslaasClient(ITranslaasClient):
                 include_context=include_context,
                 channel=channel,
                 snapshot_version=snapshot_version,
+                request_context=request_context,
             )
             asyncio.create_task(self._update_group_cache(project, group, lang))
             return result
@@ -369,6 +422,7 @@ class CachingTranslaasClient(ITranslaasClient):
         include_context: Optional[bool],
         channel: Optional[str],
         snapshot_version: Optional[str],
+        request_context: Optional[TranslaasRequestContext] = None,
     ) -> TranslationGroup:
         try:
             result = await self._inner.get_group(
@@ -379,6 +433,7 @@ class CachingTranslaasClient(ITranslaasClient):
                 include_context=include_context,
                 channel=channel,
                 snapshot_version=snapshot_version,
+                request_context=request_context,
             )
             asyncio.create_task(self._update_group_cache(project, group, lang))
             return result
@@ -406,6 +461,7 @@ class CachingTranslaasClient(ITranslaasClient):
         include_context: Optional[bool],
         channel: Optional[str],
         snapshot_version: Optional[str],
+        request_context: Optional[TranslaasRequestContext] = None,
     ) -> TranslationProject:
         cached = self._cache.get_project(project, lang)
         if cached is not None:
@@ -418,6 +474,7 @@ class CachingTranslaasClient(ITranslaasClient):
                 include_context=include_context,
                 channel=channel,
                 snapshot_version=snapshot_version,
+                request_context=request_context,
             )
             asyncio.create_task(self._update_project_cache(project, lang))
             return result
@@ -434,6 +491,7 @@ class CachingTranslaasClient(ITranslaasClient):
         include_context: Optional[bool],
         channel: Optional[str],
         snapshot_version: Optional[str],
+        request_context: Optional[TranslaasRequestContext] = None,
     ) -> TranslationProject:
         try:
             result = await self._inner.get_project(
@@ -443,6 +501,7 @@ class CachingTranslaasClient(ITranslaasClient):
                 include_context=include_context,
                 channel=channel,
                 snapshot_version=snapshot_version,
+                request_context=request_context,
             )
             asyncio.create_task(self._update_project_cache(project, lang))
             return result
@@ -467,13 +526,17 @@ class CachingTranslaasClient(ITranslaasClient):
         project: str,
         channel: Optional[str],
         snapshot_version: Optional[str],
+        request_context: Optional[TranslaasRequestContext] = None,
     ) -> ProjectLocales:
         cached = self._cache.get_project_locales(project)
         if cached is not None:
             return cached
         try:
             result = await self._inner.get_project_locales(
-                project, channel=channel, snapshot_version=snapshot_version
+                project,
+                channel=channel,
+                snapshot_version=snapshot_version,
+                request_context=request_context,
             )
             self._cache.save_project_locales(project, result)
             return result
@@ -487,10 +550,14 @@ class CachingTranslaasClient(ITranslaasClient):
         project: str,
         channel: Optional[str],
         snapshot_version: Optional[str],
+        request_context: Optional[TranslaasRequestContext] = None,
     ) -> ProjectLocales:
         try:
             result = await self._inner.get_project_locales(
-                project, channel=channel, snapshot_version=snapshot_version
+                project,
+                channel=channel,
+                snapshot_version=snapshot_version,
+                request_context=request_context,
             )
             self._cache.save_project_locales(project, result)
             return result

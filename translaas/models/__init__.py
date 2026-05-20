@@ -26,6 +26,7 @@ from translaas.models.protocols import (
 from translaas.models.request_context import (
     SdkTranslationQueryParams,
     TranslaasRequestContext,
+    merge_request_context,
 )
 from translaas.models.responses import (
     OfflineCacheDownloadResult,
@@ -66,6 +67,7 @@ __all__ = [
     "OfflineCacheDownloadResult",
     "SdkTranslationQueryParams",
     "TranslaasRequestContext",
+    "merge_request_context",
     # Protocols
     "ITranslaasClient",
     "ITranslaasService",

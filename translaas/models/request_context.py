@@ -102,3 +102,49 @@ def context_to_sdk_query(
         v=context.version,
         include_context=ic,
     )
+
+
+def merge_request_context(
+    request_context: Optional[TranslaasRequestContext] = None,
+    sdk_query: Optional[SdkTranslationQueryParams] = None,
+    *,
+    project: Optional[str] = None,
+    channel: Optional[str] = None,
+    snapshot_version: Optional[str] = None,
+    include_context: Optional[bool] = None,
+    if_none_match: Optional[str] = None,
+) -> Optional[TranslaasRequestContext]:
+    """Build a per-request context from context, sdk_query, and explicit overrides."""
+    has_input = any(
+        [
+            request_context is not None,
+            sdk_query is not None,
+            project is not None,
+            channel is not None,
+            snapshot_version is not None,
+            include_context is not None,
+            if_none_match is not None,
+        ]
+    )
+    if not has_input:
+        return None
+
+    ctx = request_context or TranslaasRequestContext()
+    if sdk_query is not None:
+        if sdk_query.channel is not None:
+            ctx.channel = sdk_query.channel
+        if sdk_query.v is not None:
+            ctx.version = sdk_query.v
+        if sdk_query.include_context is not None:
+            ctx.include_context = sdk_query.include_context
+    if project is not None:
+        ctx.project = project
+    if channel is not None:
+        ctx.channel = channel
+    if snapshot_version is not None:
+        ctx.version = snapshot_version
+    if include_context is not None:
+        ctx.include_context = include_context
+    if if_none_match is not None:
+        ctx.if_none_match = if_none_match
+    return ctx

@@ -16,6 +16,11 @@ from translaas.exceptions import (
 )
 from translaas.language.resolver import LanguageResolver
 from translaas.models.options import TranslaasOptions
+from translaas.models.request_context import (
+    SdkTranslationQueryParams,
+    TranslaasRequestContext,
+    merge_request_context,
+)
 from translaas.models.protocols import ITranslaasCacheProvider, ITranslaasClient, ITranslaasService
 from translaas.models.responses import (
     OfflineCacheDownloadResult,
@@ -342,6 +347,12 @@ class TranslaasService(ITranslaasService):
         entry: str,
         lang_or_number_or_params: Optional[Union[str, int, float, Dict[str, str]]] = None,
         number_or_params: Optional[Union[int, float, Dict[str, str]]] = None,
+        *,
+        request_context: Optional[TranslaasRequestContext] = None,
+        sdk_query: Optional[SdkTranslationQueryParams] = None,
+        project: Optional[str] = None,
+        channel: Optional[str] = None,
+        snapshot_version: Optional[str] = None,
     ) -> str:
         """Get translation (implementation method).
 
@@ -398,18 +409,21 @@ class TranslaasService(ITranslaasService):
         # Resolve language
         resolved_lang = await self._resolve_language(lang)
 
-        # Get translation from API (API handles pluralization via number parameter)
-        # Note: We pass parameters to the API, but also do client-side replacement
-        # for compatibility with both server-side and client-side parameter handling
+        ctx = merge_request_context(
+            request_context,
+            sdk_query,
+            project=project if project is not None else self.options.default_project,
+            channel=channel,
+            snapshot_version=snapshot_version,
+        )
         translation = await client.get_entry(
             group=group,
             entry=entry,
             lang=resolved_lang,
             number=number,
-            parameters=None,  # We handle parameters client-side
-            project=self.options.default_project,
-            channel=None,
-            snapshot_version=None,
+            parameters=None,
+            project=ctx.project if ctx and ctx.project else self.options.default_project,
+            request_context=ctx,
         )
 
         # Replace parameters client-side
@@ -429,6 +443,8 @@ class TranslaasService(ITranslaasService):
         project: Optional[str] = None,
         channel: Optional[str] = None,
         snapshot_version: Optional[str] = None,
+        request_context: Optional[TranslaasRequestContext] = None,
+        sdk_query: Optional[SdkTranslationQueryParams] = None,
     ) -> str:
         """Get a single translation entry.
 
@@ -444,6 +460,8 @@ class TranslaasService(ITranslaasService):
             project: Optional project slug/id (falls back to ``default_project`` in options).
             channel: Optional channel override for this request.
             snapshot_version: Optional snapshot version (`v`) override.
+            request_context: Optional per-request context (ETag, project, channel, version).
+            sdk_query: Optional SDK query overrides merged into ``request_context``.
 
         Returns:
             The translated string with parameters replaced if provided.
@@ -452,16 +470,23 @@ class TranslaasService(ITranslaasService):
             TranslaasApiException: If the API request fails.
         """
         client = self._ensure_client()
+        resolved_project = project if project is not None else self.options.default_project
+        ctx = merge_request_context(
+            request_context,
+            sdk_query,
+            project=resolved_project,
+            channel=channel,
+            snapshot_version=snapshot_version,
+        )
 
         translation = await client.get_entry(
             group=group,
             entry=entry,
             lang=lang,
             number=number,
-            parameters=None,  # We handle parameters client-side
-            project=project if project is not None else self.options.default_project,
-            channel=channel,
-            snapshot_version=snapshot_version,
+            parameters=None,
+            project=resolved_project,
+            request_context=ctx,
         )
 
         if parameters:
@@ -479,6 +504,8 @@ class TranslaasService(ITranslaasService):
         include_context: Optional[bool] = None,
         channel: Optional[str] = None,
         snapshot_version: Optional[str] = None,
+        request_context: Optional[TranslaasRequestContext] = None,
+        sdk_query: Optional[SdkTranslationQueryParams] = None,
     ) -> TranslationGroup:
         """Get a translation group.
 
@@ -492,6 +519,8 @@ class TranslaasService(ITranslaasService):
             include_context: Optional `includeContext` override for this request.
             channel: Optional channel override.
             snapshot_version: Optional snapshot version (`v`) override.
+            request_context: Optional per-request context.
+            sdk_query: Optional SDK query overrides merged into ``request_context``.
 
         Returns:
             A TranslationGroup containing all entries in the group.
@@ -500,14 +529,21 @@ class TranslaasService(ITranslaasService):
             TranslaasApiException: If the API request fails.
         """
         client = self._ensure_client()
+        ctx = merge_request_context(
+            request_context,
+            sdk_query,
+            project=project,
+            channel=channel,
+            snapshot_version=snapshot_version,
+            include_context=include_context,
+        )
         return await client.get_group(
             project=project,
             group=group,
             lang=lang,
             format=format,
             include_context=include_context,
-            channel=channel,
-            snapshot_version=snapshot_version,
+            request_context=ctx,
         )
 
     async def get_project(
@@ -519,6 +555,8 @@ class TranslaasService(ITranslaasService):
         include_context: Optional[bool] = None,
         channel: Optional[str] = None,
         snapshot_version: Optional[str] = None,
+        request_context: Optional[TranslaasRequestContext] = None,
+        sdk_query: Optional[SdkTranslationQueryParams] = None,
     ) -> TranslationProject:
         """Get an entire translation project.
 
@@ -531,6 +569,8 @@ class TranslaasService(ITranslaasService):
             include_context: Optional `includeContext` override for this request.
             channel: Optional channel override.
             snapshot_version: Optional snapshot version (`v`) override.
+            request_context: Optional per-request context.
+            sdk_query: Optional SDK query overrides merged into ``request_context``.
 
         Returns:
             A TranslationProject containing all groups and entries.
@@ -539,13 +579,20 @@ class TranslaasService(ITranslaasService):
             TranslaasApiException: If the API request fails.
         """
         client = self._ensure_client()
+        ctx = merge_request_context(
+            request_context,
+            sdk_query,
+            project=project,
+            channel=channel,
+            snapshot_version=snapshot_version,
+            include_context=include_context,
+        )
         return await client.get_project(
             project=project,
             lang=lang,
             format=format,
             include_context=include_context,
-            channel=channel,
-            snapshot_version=snapshot_version,
+            request_context=ctx,
         )
 
     async def get_project_locales(
@@ -554,6 +601,8 @@ class TranslaasService(ITranslaasService):
         *,
         channel: Optional[str] = None,
         snapshot_version: Optional[str] = None,
+        request_context: Optional[TranslaasRequestContext] = None,
+        sdk_query: Optional[SdkTranslationQueryParams] = None,
     ) -> ProjectLocales:
         """Get the list of available locales for a project.
 
@@ -563,6 +612,8 @@ class TranslaasService(ITranslaasService):
             project: The project ID.
             channel: Optional channel override.
             snapshot_version: Optional snapshot version (`v`) override.
+            request_context: Optional per-request context.
+            sdk_query: Optional SDK query overrides merged into ``request_context``.
 
         Returns:
             A ProjectLocales instance containing the list of available locales.
@@ -571,11 +622,14 @@ class TranslaasService(ITranslaasService):
             TranslaasApiException: If the API request fails.
         """
         client = self._ensure_client()
-        return await client.get_project_locales(
+        ctx = merge_request_context(
+            request_context,
+            sdk_query,
             project=project,
             channel=channel,
             snapshot_version=snapshot_version,
         )
+        return await client.get_project_locales(project=project, request_context=ctx)
 
     async def report_missing_keys(self, keys: List[ReportMissingKeyItem]) -> None:
         """Report missing translation keys (requires a project-scoped API key)."""
@@ -589,14 +643,25 @@ class TranslaasService(ITranslaasService):
         include_context: Optional[bool] = None,
         channel: Optional[str] = None,
         snapshot_version: Optional[str] = None,
+        request_context: Optional[TranslaasRequestContext] = None,
+        sdk_query: Optional[SdkTranslationQueryParams] = None,
     ) -> OfflineCacheDownloadResult:
         """Download the offline ZIP bundle for a project."""
         client = self._ensure_client()
+        ctx = merge_request_context(
+            request_context,
+            sdk_query,
+            project=project,
+            channel=channel,
+            snapshot_version=snapshot_version,
+            include_context=include_context,
+        )
         return await client.get_offline_cache(
             project,
             include_context=include_context,
             channel=channel,
             snapshot_version=snapshot_version,
+            request_context=ctx,
         )
 
     async def validate_api_key(self) -> ValidateApiKeyResult:
