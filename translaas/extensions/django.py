@@ -132,26 +132,9 @@ def get_translaas_service(request: Optional["HttpRequest"] = None) -> TranslaasS
     """
     from django.conf import settings
 
-    from translaas.models.options import TranslaasOptions
+    from translaas.extensions.config import django_config
 
-    # Get options from Django settings
-    include_ctx = getattr(settings, "TRANSLAAS_INCLUDE_CONTEXT", None)
-    options = TranslaasOptions(
-        api_key=getattr(settings, "TRANSLAAS_API_KEY", ""),
-        base_url=getattr(settings, "TRANSLAAS_BASE_URL", ""),
-        cache_mode=getattr(settings, "TRANSLAAS_CACHE_MODE", None),
-        timeout=getattr(settings, "TRANSLAAS_TIMEOUT", None),
-        cache_absolute_expiration=getattr(settings, "TRANSLAAS_CACHE_ABSOLUTE_EXPIRATION", None),
-        cache_sliding_expiration=getattr(settings, "TRANSLAAS_CACHE_SLIDING_EXPIRATION", None),
-        default_language=getattr(settings, "TRANSLAAS_DEFAULT_LANGUAGE", None),
-        verify=getattr(settings, "TRANSLAAS_VERIFY", True),
-        default_project=getattr(settings, "TRANSLAAS_DEFAULT_PROJECT", None),
-        channel=getattr(settings, "TRANSLAAS_CHANNEL", None),
-        snapshot_version=getattr(settings, "TRANSLAAS_SNAPSHOT_VERSION", None),
-        include_context=include_ctx,
-        use_conditional_requests=getattr(settings, "TRANSLAAS_USE_CONDITIONAL_REQUESTS", False),
-        api_key_header=getattr(settings, "TRANSLAAS_API_KEY_HEADER", "X-Api-Key"),
-    )
+    options = django_config(settings)
 
     # Create language resolver if request is available
     language_resolver = None

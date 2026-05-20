@@ -13,6 +13,7 @@ from translaas.exceptions import (
 from translaas.language.providers import DefaultLanguageProvider
 from translaas.language.resolver import LanguageResolver
 from translaas.models.options import TranslaasOptions
+from translaas.models.request_context import TranslaasRequestContext
 from translaas.models.responses import ProjectLocales, TranslationGroup, TranslationProject
 from translaas.models.sdk_payloads import ReportMissingKeyItem, ValidateApiKeyResult
 from translaas.service import TranslaasService
@@ -191,8 +192,7 @@ class TestTranslaasServiceTMethod:
                 number=None,
                 parameters=None,
                 project=None,
-                channel=None,
-                snapshot_version=None,
+                request_context=None,
             )
 
     @pytest.mark.asyncio
@@ -209,8 +209,7 @@ class TestTranslaasServiceTMethod:
                 number=None,
                 parameters=None,
                 project=None,
-                channel=None,
-                snapshot_version=None,
+                request_context=None,
             )
 
     @pytest.mark.asyncio
@@ -227,8 +226,7 @@ class TestTranslaasServiceTMethod:
                 number=5.0,
                 parameters=None,
                 project=None,
-                channel=None,
-                snapshot_version=None,
+                request_context=None,
             )
 
     @pytest.mark.asyncio
@@ -245,8 +243,7 @@ class TestTranslaasServiceTMethod:
                 number=5.0,
                 parameters=None,
                 project=None,
-                channel=None,
-                snapshot_version=None,
+                request_context=None,
             )
 
     @pytest.mark.asyncio
@@ -263,8 +260,7 @@ class TestTranslaasServiceTMethod:
                 number=None,
                 parameters=None,
                 project=None,
-                channel=None,
-                snapshot_version=None,
+                request_context=None,
             )
 
     @pytest.mark.asyncio
@@ -281,8 +277,7 @@ class TestTranslaasServiceTMethod:
                 number=None,
                 parameters=None,
                 project=None,
-                channel=None,
-                snapshot_version=None,
+                request_context=None,
             )
 
     @pytest.mark.asyncio
@@ -320,8 +315,7 @@ class TestTranslaasServiceConvenienceMethods:
                 number=None,
                 parameters=None,
                 project=None,
-                channel=None,
-                snapshot_version=None,
+                request_context=None,
             )
 
     @pytest.mark.asyncio
@@ -338,8 +332,7 @@ class TestTranslaasServiceConvenienceMethods:
                 lang="en",
                 format=None,
                 include_context=None,
-                channel=None,
-                snapshot_version=None,
+                request_context=TranslaasRequestContext(project="project"),
             )
 
     @pytest.mark.asyncio
@@ -355,8 +348,7 @@ class TestTranslaasServiceConvenienceMethods:
                 lang="en",
                 format=None,
                 include_context=None,
-                channel=None,
-                snapshot_version=None,
+                request_context=TranslaasRequestContext(project="project"),
             )
 
     @pytest.mark.asyncio
@@ -371,8 +363,7 @@ class TestTranslaasServiceConvenienceMethods:
             assert result == locales_data
             mock_get.assert_called_once_with(
                 project="project",
-                channel=None,
-                snapshot_version=None,
+                request_context=TranslaasRequestContext(project="project"),
             )
 
 
@@ -402,8 +393,12 @@ class TestTranslaasServiceSdkDelegates:
             lang="en",
             format="flat-json",
             include_context=True,
-            channel="c",
-            snapshot_version="9",
+            request_context=TranslaasRequestContext(
+                channel="c",
+                version="9",
+                project="p",
+                include_context=True,
+            ),
         )
 
     @pytest.mark.asyncio
@@ -442,4 +437,10 @@ class TestTranslaasServiceSdkDelegates:
             include_context=False,
             channel="ch",
             snapshot_version="1",
+            request_context=TranslaasRequestContext(
+                channel="ch",
+                version="1",
+                project="proj",
+                include_context=False,
+            ),
         )

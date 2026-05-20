@@ -128,7 +128,7 @@ class TestTranslaasClientGetEntry:
     ) -> None:
         """Test get_entry with cache hit."""
         options.cache_mode = CacheMode.ENTRY
-        cache_provider.set("entry|group:group1|entry:entry1|lang:en", "Cached Value")
+        cache_provider.set("entry:group1:entry1:en", "Cached Value")
 
         async with TranslaasClient(options, cache_provider=cache_provider) as client:
             result = await client.get_entry("group1", "entry1", "en")
@@ -155,7 +155,7 @@ class TestTranslaasClientGetEntry:
                 result = await client.get_entry("group1", "entry1", "en")
                 assert result == "API Value"
                 # Verify cache was updated
-                cache_key = "entry|group:group1|entry:entry1|lang:en"
+                cache_key = "entry:group1:entry1:en"
                 assert cache_provider.get(cache_key) == "API Value"
 
     @pytest.mark.asyncio
@@ -267,7 +267,7 @@ class TestTranslaasClientGetGroup:
         """Test get_group with cache hit."""
         options.cache_mode = CacheMode.GROUP
         cache_data = {"entry1": "value1", "entry2": "value2"}
-        cache_provider.set("group|project:project1|group:group1|lang:en", json.dumps(cache_data))
+        cache_provider.set("group:project1:group1:en", json.dumps(cache_data))
 
         async with TranslaasClient(options, cache_provider=cache_provider) as client:
             result = await client.get_group("project1", "group1", "en")
@@ -289,12 +289,12 @@ class TestTranslaasClientGetGroup:
 
         async with TranslaasClient(options, cache_provider=cache_provider) as client:
             with patch.object(
-                client._http_client, "request", new_callable=AsyncMock, return_value=mock_response
+                client._http_client, "get", new_callable=AsyncMock, return_value=mock_response
             ):
                 result = await client.get_group("project1", "group1", "en")
                 assert isinstance(result, TranslationGroup)
                 # Verify cache was updated
-                cache_key = "group|project:project1|group:group1|lang:en"
+                cache_key = "group:project1:group1:en"
                 cached_value = cache_provider.get(cache_key)
                 assert cached_value is not None
                 assert json.loads(cached_value) == response_data
@@ -366,7 +366,7 @@ class TestTranslaasClientGetProject:
         """Test get_project with cache hit."""
         options.cache_mode = CacheMode.PROJECT
         cache_data = {"group1": {"entry1": "value1"}}
-        cache_provider.set("project|project:project1|lang:en", json.dumps(cache_data))
+        cache_provider.set("project:project1:en", json.dumps(cache_data))
 
         async with TranslaasClient(options, cache_provider=cache_provider) as client:
             result = await client.get_project("project1", "en")
@@ -387,12 +387,12 @@ class TestTranslaasClientGetProject:
 
         async with TranslaasClient(options, cache_provider=cache_provider) as client:
             with patch.object(
-                client._http_client, "request", new_callable=AsyncMock, return_value=mock_response
+                client._http_client, "get", new_callable=AsyncMock, return_value=mock_response
             ):
                 result = await client.get_project("project1", "en")
                 assert isinstance(result, TranslationProject)
                 # Verify cache was updated
-                cache_key = "project|project:project1|lang:en"
+                cache_key = "project:project1:en"
                 cached_value = cache_provider.get(cache_key)
                 assert cached_value is not None
                 assert json.loads(cached_value) == response_data
@@ -442,7 +442,7 @@ class TestTranslaasClientGetProjectLocales:
         """Test get_project_locales with cache hit."""
         options.cache_mode = CacheMode.PROJECT
         cache_data = ["en", "fr"]
-        cache_provider.set("locales|project:project1", json.dumps(cache_data))
+        cache_provider.set("locales:project1", json.dumps(cache_data))
 
         async with TranslaasClient(options, cache_provider=cache_provider) as client:
             result = await client.get_project_locales("project1")
@@ -487,7 +487,7 @@ class TestTranslaasClientCacheExpiration:
             ):
                 await client.get_entry("group1", "entry1", "en")
                 # Verify cache.set was called with expiration
-                cache_key = "entry|group:group1|entry:entry1|lang:en"
+                cache_key = "entry:group1:entry1:en"
                 cached_value = cache_provider.get(cache_key)
                 assert cached_value == "Cached Value"
 
@@ -509,7 +509,7 @@ class TestTranslaasClientCacheExpiration:
                 client._http_client, "request", new_callable=AsyncMock, return_value=mock_response
             ):
                 await client.get_entry("group1", "entry1", "en")
-                cache_key = "entry|group:group1|entry:entry1|lang:en"
+                cache_key = "entry:group1:entry1:en"
                 cached_value = cache_provider.get(cache_key)
                 assert cached_value == "Cached Value"
 
@@ -559,7 +559,7 @@ class TestTranslaasClientSdkExtras:
 
     @pytest.mark.asyncio
     async def test_get_offline_cache(self, client: TranslaasClient) -> None:
-        """GET /sdk/v1/translations/offline-cache returns raw bytes."""
+        """GET /sdk/v1/translations/offline-cache returns download result."""
         mock_response = httpx.Response(
             200,
             content=b"ZIPBYTES",
@@ -567,8 +567,9 @@ class TestTranslaasClientSdkExtras:
         )
         with patch.object(client._http_client, "get", new_callable=AsyncMock) as mock_get:
             mock_get.return_value = mock_response
-            data = await client.get_offline_cache("proj1")
-            assert data == b"ZIPBYTES"
+            result = await client.get_offline_cache("proj1")
+            assert result.content == b"ZIPBYTES"
+            assert result.not_modified is False
 
 
 class TestTranslaasClientErrorHandling:

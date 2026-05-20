@@ -1,5 +1,6 @@
 """Response models for the Translaas SDK."""
 
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 from translaas.models.enums import PluralCategory
@@ -154,8 +155,20 @@ class TranslationProject:
             return None
 
         if isinstance(group_data, dict):
+            if "entries" in group_data and isinstance(group_data["entries"], dict):
+                return TranslationGroup(entries=group_data["entries"])
             return TranslationGroup(entries=group_data)
         return None
+
+
+@dataclass
+class OfflineCacheDownloadResult:
+    """Result of downloading the offline translation ZIP bundle."""
+
+    not_modified: bool = False
+    etag: Optional[str] = None
+    suggested_file_name: Optional[str] = None
+    content: Optional[bytes] = None
 
 
 class ProjectLocales:

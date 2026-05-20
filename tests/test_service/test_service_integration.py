@@ -50,8 +50,7 @@ class TestTranslaasServiceIntegration:
                     number=None,
                     parameters=None,
                     project=None,
-                    channel=None,
-                    snapshot_version=None,
+                    request_context=None,
                 )
 
     @pytest.mark.asyncio
@@ -70,8 +69,7 @@ class TestTranslaasServiceIntegration:
                     number=None,
                     parameters=None,
                     project=None,
-                    channel=None,
-                    snapshot_version=None,
+                    request_context=None,
                 )
 
     @pytest.mark.asyncio
@@ -93,8 +91,7 @@ class TestTranslaasServiceIntegration:
                     number=5.0,
                     parameters=None,
                     project=None,
-                    channel=None,
-                    snapshot_version=None,
+                    request_context=None,
                 )
 
     @pytest.mark.asyncio
@@ -180,8 +177,7 @@ class TestTranslaasServiceIntegration:
                     number=None,
                     parameters=None,
                     project=None,
-                    channel=None,
-                    snapshot_version=None,
+                    request_context=None,
                 )
 
     @pytest.mark.asyncio

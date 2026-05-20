@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `merge_request_context` and `TranslaasService` forwarding of `request_context` / `sdk_query` on `t()`, `get_entry()`, `get_group()`, `get_project()`, `get_project_locales()`, and `get_offline_cache()`.
+- `CachingTranslaasClient` passes `request_context` through to the inner client on API paths.
+- `fastapi_config()` helper; FastAPI `init_app()` resolves options from `app.state.translaas_config`, mapped state keys, or environment (aligned with Django/Flask).
+
+## [0.3.0b2] - 2026-05-20
+
+SDK v1 HTTP parity (Phases A–C for [#41](https://github.com/acuencadev/translaas-sdk-python/issues/41)).
+
+### Added
+
+- `TranslaasRequestContext`, `SdkTranslationQueryParams`, `CacheKeyBuilder`, and `OfflineCacheDownloadResult`.
+- `sdk_translations_path_prefix`, `default_sdk_query`, and `format=flat-json` composite-key project parsing.
+- Text query auto-injects plural parameter `N` when `n` is set (invariant formatting).
+- `CachingTranslaasClient` with `CACHE_FIRST`, `API_FIRST`, and `CACHE_ONLY` offline fallback modes.
+- On-disk offline layout aligned with HTTP spec §7.6; `parse_offline_zip`, `OfflineCacheSyncService`, `PluralResolver`, `ParameterReplacer`.
+- `create_translaas_client` / `create_offline_cache_provider`; `TranslaasService` wires offline mode when enabled.
+- Meta-repo sample `examples/python/offline-node`; extended `build_translaas_options` / `from_env` / framework config helpers.
+
+### Changed
+
+- **Breaking:** `FileCacheProvider` on-disk layout changed from flat `{project}_{lang}.json` files to the spec tree (invalidates prior offline cache directories).
+- **Breaking:** `get_offline_cache` returns `OfflineCacheDownloadResult` instead of raw `bytes`.
+- **Breaking:** In-memory cache keys use `CacheKeyBuilder` format (invalidates prior cache entries).
+- 204/304 responses match .NET client semantics (empty fallbacks instead of exceptions when uncached).
+- `report_missing_keys` with an empty list performs no HTTP request.
+- API error messages prefer JSON `{code, message}` envelopes when present.
+- README corrected (single package, offline docs); Django/Flask use shared config builders; version `0.3.0b2`.
+
 ## [0.3.0b1] - 2026-04-06
 
 ### Added

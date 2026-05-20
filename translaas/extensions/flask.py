@@ -126,18 +126,9 @@ class Translaas:
 
         # Get options from parameter or app config
         if options is None:
-            from translaas.models.options import TranslaasOptions
+            from translaas.extensions.config import flask_config
 
-            options = TranslaasOptions(
-                api_key=app.config.get("TRANSLAAS_API_KEY", ""),
-                base_url=app.config.get("TRANSLAAS_BASE_URL", ""),
-                cache_mode=app.config.get("TRANSLAAS_CACHE_MODE"),
-                timeout=app.config.get("TRANSLAAS_TIMEOUT"),
-                cache_absolute_expiration=app.config.get("TRANSLAAS_CACHE_ABSOLUTE_EXPIRATION"),
-                cache_sliding_expiration=app.config.get("TRANSLAAS_CACHE_SLIDING_EXPIRATION"),
-                default_language=app.config.get("TRANSLAAS_DEFAULT_LANGUAGE"),
-                verify=app.config.get("TRANSLAAS_VERIFY", True),
-            )
+            options = flask_config(app.config)
 
         self._options = options
 

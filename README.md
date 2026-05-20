@@ -22,8 +22,8 @@ A strongly-typed, performant, and modular Python SDK for consuming the **Transla
 - ✅ **Offline Caching** - File-based caching for offline mode with automatic sync
 - ✅ **Hybrid Caching** - Two-level caching (memory L1 + file L2) for optimal performance
 - ✅ **Multi-Environment Support** - Works in Python 3.8+, CPython, PyPy, and modern Python runtimes
-- ✅ **Retry & Resilience** - Configurable retry policies and timeouts
-- ✅ **Modular Design** - Use only what you need with separate Python packages
+- ✅ **Configurable timeouts** - HTTP client timeout via `TranslaasOptions`
+- ✅ **Single installable package** - All modules ship in the `translaas` PyPI package
 - ✅ **Async/Await** - Fully asynchronous API for optimal performance
 - ✅ **Type Hints** - Native Python type hints with full IDE support
 
@@ -42,17 +42,6 @@ python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install translaas
 ```
-
-### Individual Packages
-
-If you prefer to use individual packages:
-
-- `translaas-models` - Data transfer objects and types
-- `translaas-client` - Core HTTP client
-- `translaas-caching` - In-memory caching layer
-- `translaas-caching-file` - File-based offline caching with hybrid caching support
-- `translaas-extensions` - Framework integrations (Flask, FastAPI, Django, etc.)
-- `translaas` - Main package (includes all) - **Recommended**
 
 ## Quick Start
 
@@ -150,7 +139,13 @@ translaas = TranslaasService(options)
 | Option                      | Required        | Description                                                                                |
 | --------------------------- | --------------- | ------------------------------------------------------------------------------------------ |
 | `api_key`                   | ✅ **Required** | Your Translaas API key                                                                     |
-| `base_url`                  | ✅ **Required** | Base URL for the Translaas API (do NOT include `/api`)                                     |
+| `base_url`                  | ✅ **Required** | API origin (e.g. `https://api.translaas.com`). May include `/sdk/v1`; it is stripped automatically. |
+| `default_project`           | ⚪ Optional     | Default `project` query for text calls and offline `get_entry` when using a multi-project key |
+| `channel`                   | ⚪ Optional     | SDK snapshot channel query (`channel`)                                                     |
+| `snapshot_version`          | ⚪ Optional     | SDK snapshot version query (`v`)                                                           |
+| `include_context`           | ⚪ Optional     | Adds `includeContext` on project/group/offline-cache requests                            |
+| `use_conditional_requests`  | ⚪ Optional     | Send `If-None-Match` and handle `304 Not Modified` when caching is enabled                 |
+| `offline_cache`             | ⚪ Optional     | `OfflineCacheOptions` for file-based offline mode (see below)                              |
 | `default_language`           | ⚪ Optional     | Default language code fallback (e.g., `LanguageCodes.ENGLISH`)                             |
 | `cache_mode`                | ⚪ Optional     | Caching mode (`CacheMode.NONE`, `CacheMode.ENTRY`, `CacheMode.GROUP`, `CacheMode.PROJECT`) |
 | `cache_absolute_expiration` | ⚪ Optional     | Absolute cache expiration time (seconds)                                                    |
@@ -182,6 +177,35 @@ translaas = TranslaasService(options)
 ```
 
 **Note:** `api_key` should be stored in environment variables or secure configuration, not in source code.
+
+Framework integrations (`Flask`, `Django`, `from_env`) also accept `TRANSLAAS_DEFAULT_PROJECT`, `TRANSLAAS_CHANNEL`, `TRANSLAAS_SNAPSHOT_VERSION`, `TRANSLAAS_INCLUDE_CONTEXT`, `TRANSLAAS_USE_CONDITIONAL_REQUESTS`, and offline settings (`TRANSLAAS_OFFLINE_CACHE_ENABLED`, `TRANSLAAS_OFFLINE_CACHE_DIRECTORY`, `TRANSLAAS_OFFLINE_FALLBACK_MODE`, etc.). See `translaas.extensions.config`.
+
+### Offline mode
+
+When `offline_cache.enabled` is `True`, `TranslaasService` wraps the HTTP client with `CachingTranslaasClient` and reads/writes the on-disk layout from the HTTP spec (§7.6): `manifest.json`, `{project}/locales.json`, `{project}/{lang}/project.json`.
+
+```python
+from translaas import TranslaasOptions, TranslaasService
+from translaas.models.enums import OfflineFallbackMode
+from translaas.models.options import OfflineCacheOptions
+
+options = TranslaasOptions(
+    api_key="your-api-key",
+    base_url="https://api.translaas.com",
+    default_project="my-project",
+    offline_cache=OfflineCacheOptions(
+        enabled=True,
+        cache_directory=".translaas-cache",
+        fallback_mode=OfflineFallbackMode.CACHE_FIRST,
+        default_project_id="my-project",
+    ),
+)
+
+async with TranslaasService(options) as service:
+    text = await service.t("common", "welcome", "en")
+```
+
+Use `OfflineCacheSyncService` to populate the cache from the API or an offline ZIP bundle (`parse_offline_zip`).
 
 ## Usage Examples
 
@@ -247,6 +271,10 @@ except Exception as e:
     print(f"Error: {str(e)}")
 ```
 
+## Parity & release
+
+SDK v1 parity with the HTTP spec and .NET/JS reference is tracked in [docs/PARITY_CHECKLIST.md](docs/PARITY_CHECKLIST.md) (sign-off for **0.3.0b2**).
+
 ## Development
 
 ### Building from Source
@@ -301,55 +329,23 @@ options = TranslaasOptions(
 
 ## Examples
 
-Example applications are maintained under `examples/` but that directory is **not** tracked in this repository (see `.gitignore`). If you already have `examples/` locally—whether from a teammate, an internal package, or your own copy—the layout and commands below apply.
+In the **translaas-all** meta-repo, Python samples live under [`examples/python/`](../../examples/python/) (mirroring the JavaScript samples under `examples/js/`).
 
-### Basic Python Example
+### Offline — Node-style console sample
 
-Basic Python application showing translation lookups, caching, and error handling.
+**CacheOnly** demo using `CachingTranslaasClient` and a pre-seeded file cache (no live API calls):
 
 ```bash
-cd examples/basic
+cd examples/python/offline-node
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 python main.py
 ```
 
-### Flask Example
+Optional: copy `.env.example` to `.env` when extending the sample to call the live API for cache sync.
 
-Flask server with middleware integration and automatic language resolution from HTTP requests.
-
-```bash
-cd examples/flask
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-pip install -r requirements.txt
-python app.py
-```
-
-### FastAPI Example
-
-FastAPI application with async support, dependency injection, and automatic language resolution.
-
-```bash
-cd examples/fastapi
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn main:app --reload
-```
-
-### Django Example
-
-Django application with middleware integration, template tags, and automatic language resolution.
-
-```bash
-cd examples/django
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-pip install -r requirements.txt
-python manage.py runserver
-```
+Additional framework examples (`basic`, `flask`, `fastapi`, `django`) may exist locally but are not tracked in the SDK repository (see `.gitignore`).
 
 ## License
 

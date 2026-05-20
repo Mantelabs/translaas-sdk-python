@@ -23,7 +23,13 @@ from translaas.models.protocols import (
 )
 
 # Response models
+from translaas.models.request_context import (
+    SdkTranslationQueryParams,
+    TranslaasRequestContext,
+    merge_request_context,
+)
 from translaas.models.responses import (
+    OfflineCacheDownloadResult,
     ProjectLocales,
     TranslationGroup,
     TranslationProject,
@@ -58,6 +64,10 @@ __all__ = [
     "TranslationGroup",
     "TranslationProject",
     "ProjectLocales",
+    "OfflineCacheDownloadResult",
+    "SdkTranslationQueryParams",
+    "TranslaasRequestContext",
+    "merge_request_context",
     # Protocols
     "ITranslaasClient",
     "ITranslaasService",

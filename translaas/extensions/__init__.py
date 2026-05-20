@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 from translaas.extensions.config import (
     django_config,
+    fastapi_config,
     flask_config,
     from_dict,
     from_env,
@@ -48,4 +49,5 @@ __all__ = [
     "from_env",
     "flask_config",
     "django_config",
+    "fastapi_config",
 ]
