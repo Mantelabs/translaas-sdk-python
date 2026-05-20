@@ -8,6 +8,7 @@ parameter replacement.
 import re
 from typing import Dict, List, Optional, Union, overload
 
+from translaas.caching_file.client_factory import create_translaas_client
 from translaas.client.client import TranslaasClient
 from translaas.exceptions import (
     TranslaasConfigurationException,
@@ -15,7 +16,7 @@ from translaas.exceptions import (
 )
 from translaas.language.resolver import LanguageResolver
 from translaas.models.options import TranslaasOptions
-from translaas.models.protocols import ITranslaasCacheProvider, ITranslaasService
+from translaas.models.protocols import ITranslaasCacheProvider, ITranslaasClient, ITranslaasService
 from translaas.models.responses import (
     OfflineCacheDownloadResult,
     ProjectLocales,
@@ -77,7 +78,7 @@ class TranslaasService(ITranslaasService):
         self.options = options
         self.cache_provider = cache_provider
         self.language_resolver = language_resolver
-        self._client: Optional[TranslaasClient] = None
+        self._client: Optional[ITranslaasClient] = None
 
     async def __aenter__(self) -> "TranslaasService":
         """Enter the async context manager.
@@ -87,8 +88,10 @@ class TranslaasService(ITranslaasService):
         Returns:
             Self for use in async context manager.
         """
-        self._client = TranslaasClient(self.options, self.cache_provider)
-        await self._client.__aenter__()
+        self._client = create_translaas_client(self.options, self.cache_provider)
+        enter = getattr(self._client, "__aenter__", None)
+        if enter is not None:
+            await enter()
         return self
 
     async def __aexit__(
@@ -104,10 +107,12 @@ class TranslaasService(ITranslaasService):
             exc_tb: Exception traceback if an exception occurred.
         """
         if self._client:
-            await self._client.__aexit__(exc_type, exc_val, exc_tb)
+            exit_fn = getattr(self._client, "__aexit__", None)
+            if exit_fn is not None:
+                await exit_fn(exc_type, exc_val, exc_tb)
             self._client = None
 
-    def _ensure_client(self) -> TranslaasClient:
+    def _ensure_client(self) -> ITranslaasClient:
         """Ensure the client is initialized.
 
         Returns:

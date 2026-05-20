@@ -22,6 +22,8 @@ from translaas.models import (
     ValidateApiKeyResult,
 )
 from translaas.caching import CacheKeyBuilder
+from translaas.caching_file import CachingTranslaasClient, create_translaas_client
+from translaas.offline import OfflineBundle, OfflineCacheSyncService, parse_offline_zip
 from translaas.service import TranslaasService
 
 __all__ = [
@@ -48,4 +50,9 @@ __all__ = [
     "SdkTranslationQueryParams",
     "TranslaasRequestContext",
     "CacheKeyBuilder",
+    "CachingTranslaasClient",
+    "create_translaas_client",
+    "OfflineBundle",
+    "OfflineCacheSyncService",
+    "parse_offline_zip",
 ]

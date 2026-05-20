@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `CachingTranslaasClient` with `CACHE_FIRST`, `API_FIRST`, and `CACHE_ONLY` offline fallback modes.
+- On-disk offline layout aligned with HTTP spec §7.6 (`manifest.json`, `{project}/locales.json`, `{project}/{lang}/project.json` wrappers).
+- `parse_offline_zip`, `OfflineBundle`, and `OfflineCacheSyncService` for ZIP ingestion and API sync.
+- `PluralResolver` and `ParameterReplacer` for offline entry resolution from cached groups.
+- `create_translaas_client` / `create_offline_cache_provider` factory helpers; `TranslaasService` wires offline mode automatically.
 - `TranslaasRequestContext` and `SdkTranslationQueryParams` for per-request channel, version, project, and conditional GET.
 - `CacheKeyBuilder` with .NET-compatible colon-separated cache keys.
 - `sdk_translations_path_prefix` and `default_sdk_query` on `TranslaasOptions`.
@@ -18,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Breaking:** `FileCacheProvider` on-disk layout changed from flat `{project}_{lang}.json` files to the spec tree (invalidates prior offline cache directories).
 - **Breaking:** `get_offline_cache` returns `OfflineCacheDownloadResult` instead of raw `bytes`.
 - **Breaking:** In-memory cache keys use `CacheKeyBuilder` format (invalidates prior cache entries).
 - 204/304 responses match .NET client semantics (empty fallbacks instead of exceptions when uncached).
