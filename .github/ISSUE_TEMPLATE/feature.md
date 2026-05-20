@@ -8,56 +8,42 @@ assignees: ''
 
 **Description:**
 
-[Provide a clear and concise description of the feature. Explain the problem it solves, the value it adds, or the improvement it delivers.]
+[What should be built and why? Problem, value, or improvement.]
 
-**Current Behavior:**
+**Current behavior:**
 
-- [Describe what currently happens]
-- [List specific pain points, limitations, or gaps]
+- [What happens today]
+- [Pain points or gaps]
 
-**Expected Behavior:**
+**Expected behavior:**
 
-- [Describe what should happen after implementation]
-- [List the benefits, improvements, or outcomes]
+- [Desired outcome after implementation]
+- [Benefits]
 
-**Acceptance Criteria:**
+**Acceptance criteria:**
 
-- [ ] [First acceptance criterion - be specific and measurable]
-- [ ] [Second acceptance criterion]
-- [ ] [Third acceptance criterion]
-- [ ] [Continue as needed]
+- [ ] [Specific, measurable criterion 1]
+- [ ] [Criterion 2]
+- [ ] [Criterion 3]
 
-**Technical Notes:**
+**Technical notes:**
 
-- [Any relevant technical context, constraints, or considerations]
-- [References to related code, patterns, or architecture decisions]
-- [Dependencies or prerequisites]
-- [Database migrations, API changes, or breaking changes if applicable]
-- [Caching requirements, performance considerations]
+- Repository / area: [platform, sdk/js, sdk/dotnet, examples, meta-repo]
+- [Constraints, dependencies, API or schema changes]
+- [Performance, caching, or security considerations]
 
-**Implementation Plan:**
+**Implementation plan (optional):**
 
-**Backend:**
-- [ ] [Backend task 1 - e.g., Create API endpoint]
-- [ ] [Backend task 2 - e.g., Implement query handler]
-- [ ] [Backend task 3 - e.g., Add caching if needed]
-- [ ] [Backend task 4 - e.g., Write unit tests]
+- [ ] [Task 1]
+- [ ] [Task 2]
+- [ ] [Tests / docs]
 
-**Frontend:**
-- [ ] [Frontend task 1 - e.g., Create service function]
-- [ ] [Frontend task 2 - e.g., Create React Query hook]
-- [ ] [Frontend task 3 - e.g., Update UI component]
-- [ ] [Frontend task 4 - e.g., Add loading/error states]
+**Files to modify (optional):**
 
-**Files to Modify:**
+- [Paths relative to the repository you are changing]
 
-- [List of files that will need to be changed]
-- [Include file paths relative to the repository root]
+**Additional context:**
 
-**Additional Context:**
-
-- [Priority level: High/Medium/Low]
-- [Estimated effort: Small/Medium/Large]
-- [Related issues or PRs]
-- [Sprint or milestone assignment if applicable]
-
+- Priority: [High / Medium / Low]
+- Estimated effort: [Small / Medium / Large]
+- Related issues or PRs

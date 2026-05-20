@@ -10,44 +10,41 @@ assignees: ''
 
 [Provide a clear and concise description of the bug]
 
-**Steps to Reproduce:**
+**Steps to reproduce:**
 
 1. [First step]
 2. [Second step]
-3. [Third step]
-4. [Continue as needed]
+3. [Continue as needed]
 
-**Expected Behavior:**
+**Expected behavior:**
 
 [Describe what should happen]
 
-**Actual Behavior:**
+**Actual behavior:**
 
 [Describe what actually happens]
 
-**Error Messages/Logs:**
+**Error messages / logs:**
 
 ```
-[Paste any error messages, stack traces, or relevant logs here]
+[Paste error messages, stack traces, or relevant logs]
 ```
 
 **Environment:**
 
-- OS: [e.g., Windows 10, macOS 14.0]
-- Browser: [e.g., Chrome 120, Firefox 121] (if applicable)
-- Backend Version: [e.g., commit hash or version]
-- Frontend Version: [e.g., commit hash or version]
+- Repository / area: [e.g. platform, sdk/js, sdk/dotnet, examples]
+- OS: [e.g. Windows 11, macOS 14, Ubuntu 22.04]
+- Runtime / toolchain: [e.g. .NET 10, Node 20, Python 3.12]
+- Version or commit: [if known]
 
-**Additional Context:**
+**Additional context:**
 
-- [Priority level: High/Medium/Low]
-- [Frequency: Always/Sometimes/Rarely]
-- [Workaround: If any workaround exists]
-- [Related issues or PRs]
+- Priority: [High / Medium / Low]
+- Frequency: [Always / Sometimes / Rarely]
+- Workaround: [if any]
+- Related issues or PRs
 
-**Proposed Solution:**
+**Proposed fix (optional):**
 
-- [ ] [Solution step 1]
-- [ ] [Solution step 2]
-- [ ] [Solution step 3]
-
+- [ ] [Step 1]
+- [ ] [Step 2]

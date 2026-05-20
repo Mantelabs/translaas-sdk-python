@@ -1,46 +1,39 @@
 ---
-name: roadmap-item
-about: Track internal work items, features, and improvements for the product roadmap
-title: "[Feature/Improvement/Bug] Brief description of the work item"
+name: Roadmap item
+about: Track internal roadmap work (features, improvements, tech debt)
+title: "[Roadmap] Brief description of the work item"
 labels: ''
 assignees: ''
-
 ---
 
 **Description:**
 
-[Provide a clear and concise description of the work item or feature. Explain the problem it solves, the value it adds, or the improvement it delivers.]
+[What is the work item and why does it matter?]
 
-**Current Behavior:**
-- [Describe what currently happens]
-- [List specific pain points, limitations, or gaps]
+**Current behavior:**
 
-**Expected Behavior:**
-- [Describe what should happen after implementation]
-- [List the benefits, improvements, or outcomes]
+- [What happens today]
+- [Pain points or gaps]
 
-**Acceptance Criteria:**
+**Expected behavior:**
 
-- [ ] [First acceptance criterion - be specific and measurable]
-- [ ] [Second acceptance criterion]
-- [ ] [Third acceptance criterion]
-- [ ] [Continue as needed]
+- [Target outcome]
+- [Benefits]
 
-**Technical Notes:**
+**Acceptance criteria:**
 
-- [Any relevant technical context, constraints, or considerations]
-- [References to related code, patterns, or architecture decisions]
-- [Dependencies or prerequisites]
-- [Database migrations, API changes, or breaking changes if applicable]
+- [ ] [Criterion 1]
+- [ ] [Criterion 2]
+- [ ] [Criterion 3]
 
-**Files to Modify:**
+**Technical notes:**
 
-- [List of files that will need to be changed]
-- [Include file paths relative to the repository root]
+- Repository / area: [platform, sdk/*, examples, meta-repo]
+- [Dependencies, migrations, breaking changes]
 
-**Additional Context:**
+**Additional context:**
 
-- [Priority level: High/Medium/Low]
-- [Estimated effort: Small/Medium/Large]
-- [Related issues or PRs]
-- [Sprint or milestone assignment if applicable]
+- Priority: [High / Medium / Low]
+- Estimated effort: [Small / Medium / Large]
+- Related issues or PRs
+- Milestone / sprint (if applicable)
