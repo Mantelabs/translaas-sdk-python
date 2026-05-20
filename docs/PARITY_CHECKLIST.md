@@ -71,6 +71,6 @@ Reference: [translaas-sdk-python-parity-change-plan.md](../../../.docs/translaas
 | Role | Name | Date | Version |
 |------|------|------|---------|
 | Implementation | SDK parity branch `feature/sdk-v1-parity-phase-a` | 2026-05-20 | **0.3.0b2** |
-| Tests | `pytest` full suite, coverage ≥ 80% | 2026-05-20 | 439+ passed |
+| Tests | `pytest` full suite, coverage ≥ 80% | 2026-05-20 | 449 passed |
 
 **Approved for beta tag / publish** when CI is green on the parity branch.
