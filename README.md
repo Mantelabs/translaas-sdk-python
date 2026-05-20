@@ -271,6 +271,10 @@ except Exception as e:
     print(f"Error: {str(e)}")
 ```
 
+## Parity & release
+
+SDK v1 parity with the HTTP spec and .NET/JS reference is tracked in [docs/PARITY_CHECKLIST.md](docs/PARITY_CHECKLIST.md) (sign-off for **0.3.0b2**).
+
 ## Development
 
 ### Building from Source
