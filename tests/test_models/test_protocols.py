@@ -84,9 +84,11 @@ class MockTranslaasClient:
         include_context: Optional[bool] = None,
         channel: Optional[str] = None,
         snapshot_version: Optional[str] = None,
-    ) -> bytes:
+    ) -> "OfflineCacheDownloadResult":
         """Mock offline cache download."""
-        return b"PK\x05\x06"
+        from translaas.models.responses import OfflineCacheDownloadResult
+
+        return OfflineCacheDownloadResult(content=b"PK\x05\x06")
 
     async def validate_api_key(self) -> ValidateApiKeyResult:
         """Mock validate API key."""
@@ -177,7 +179,11 @@ class TestProtocolCompliance:
         assert isinstance(locales, ProjectLocales)
 
         await client.report_missing_keys([])
-        assert await client.get_offline_cache("p") == b"PK\x05\x06"
+        from translaas.models.responses import OfflineCacheDownloadResult
+
+        result = await client.get_offline_cache("p")
+        assert isinstance(result, OfflineCacheDownloadResult)
+        assert result.content == b"PK\x05\x06"
         v = await client.validate_api_key()
         assert v.is_valid is True
 

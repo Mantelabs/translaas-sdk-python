@@ -14,10 +14,14 @@ from translaas.exceptions import (
 from translaas.models import (
     CacheMode,
     LanguageCodes,
+    OfflineCacheDownloadResult,
     ReportMissingKeyItem,
+    SdkTranslationQueryParams,
     TranslaasOptions,
+    TranslaasRequestContext,
     ValidateApiKeyResult,
 )
+from translaas.caching import CacheKeyBuilder
 from translaas.service import TranslaasService
 
 __all__ = [
@@ -40,4 +44,8 @@ __all__ = [
     "ValidateApiKeyResult",
     "CacheMode",
     "LanguageCodes",
+    "OfflineCacheDownloadResult",
+    "SdkTranslationQueryParams",
+    "TranslaasRequestContext",
+    "CacheKeyBuilder",
 ]

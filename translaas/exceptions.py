@@ -5,6 +5,7 @@ including base exceptions, API exceptions, configuration exceptions, cache
 exceptions, and language resolution exceptions.
 """
 
+import json
 from typing import Optional
 
 
@@ -89,6 +90,7 @@ class TranslaasApiException(TranslaasException):
         message: str,
         *,
         status_code: Optional[int] = None,
+        response_content: Optional[str] = None,
         inner_error: Optional[Exception] = None,
     ) -> None:
         """Initialize a TranslaasApiException.
@@ -96,10 +98,12 @@ class TranslaasApiException(TranslaasException):
         Args:
             message: The error message describing what went wrong.
             status_code: Optional HTTP status code returned by the API.
+            response_content: Optional raw response body from the API.
             inner_error: Optional inner exception that caused this exception.
         """
         super().__init__(message, inner_error=inner_error)
         self.status_code = status_code
+        self.response_content = response_content
 
     def __str__(self) -> str:
         """Return a string representation of the exception.
@@ -344,13 +348,11 @@ def create_api_exception_from_httpx_error(
         else:
             message = f"API request failed with status {status_code}"
 
-        # Try to extract response body for better error messages
         try:
             response_body = error.response.text
-            if response_body and len(response_body) < 500:  # Only include if reasonable length
-                message = f"{message}\nResponse: {response_body}"
+            message = _message_from_api_body(message, response_body)
         except Exception:
-            pass  # Ignore errors when reading response body
+            pass
 
     # Provide more specific messages for common error types
     if isinstance(error, httpx.TimeoutException):
@@ -363,5 +365,25 @@ def create_api_exception_from_httpx_error(
     return TranslaasApiException(
         message,
         status_code=status_code,
+        response_content=response_body if isinstance(error, httpx.HTTPStatusError) else None,
         inner_error=error,
     )
+
+
+def _message_from_api_body(default_message: str, response_body: Optional[str]) -> str:
+    if not response_body:
+        return default_message
+    if len(response_body) > 2000:
+        return default_message
+    try:
+        data = json.loads(response_body)
+        if isinstance(data, dict):
+            code = data.get("code")
+            msg = data.get("message") or data.get("title") or data.get("detail")
+            if msg:
+                if code:
+                    return f"[{code}] {msg}"
+                return str(msg)
+    except json.JSONDecodeError:
+        pass
+    return f"{default_message}\nResponse: {response_body}"

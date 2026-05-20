@@ -38,8 +38,35 @@ def translation_group_from_response(data: Any) -> TranslationGroup:
     return TranslationGroup(entries=dict(data))
 
 
-def translation_project_from_response(data: Any) -> TranslationProject:
-    """Parse nested project payload or legacy root map of groups."""
+def _flat_composite_project_json_to_groups(data: dict[str, Any]) -> dict[str, Any]:
+    groups: dict[str, Any] = {}
+    for composite_key, value in data.items():
+        if not isinstance(value, str):
+            continue
+        dot = composite_key.find(".")
+        if dot <= 0:
+            continue
+        group_name = composite_key[:dot]
+        entry_name = composite_key[dot + 1 :]
+        if group_name not in groups:
+            groups[group_name] = {}
+        if isinstance(groups[group_name], dict):
+            groups[group_name][entry_name] = value
+    return groups
+
+
+def _is_likely_flat_composite_project_shape(data: dict[str, Any]) -> bool:
+    keys = [k for k in data if k not in _PROJECT_META]
+    if not keys:
+        return False
+    return all("." in k and isinstance(data[k], str) for k in keys)
+
+
+def translation_project_from_response(
+    data: Any,
+    format_hint: Optional[str] = None,
+) -> TranslationProject:
+    """Parse nested project payload, flat-json composite keys, or legacy root map."""
     if not isinstance(data, dict):
         raise TranslaasApiException(
             f"Invalid project response: expected object, got {type(data).__name__}",
@@ -48,6 +75,13 @@ def translation_project_from_response(data: Any) -> TranslationProject:
     gec = data.get("groupEntryContext")
     if "groups" in data and isinstance(data["groups"], dict):
         return TranslationProject(groups=data["groups"], group_entry_context=gec)
+    if format_hint == "flat-json" or (
+        "groups" not in data and _is_likely_flat_composite_project_shape(data)
+    ):
+        return TranslationProject(
+            groups=_flat_composite_project_json_to_groups(data),
+            group_entry_context=gec,
+        )
     groups_map = {k: v for k, v in data.items() if k not in _PROJECT_META}
     return TranslationProject(groups=groups_map, group_entry_context=gec)
 

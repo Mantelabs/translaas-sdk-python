@@ -9,6 +9,7 @@ import httpx
 import pytest
 
 from tests.conftest import MockCacheProvider
+from translaas.caching.cache_key_builder import CacheKeyBuilder
 from translaas.client.client import TranslaasClient
 from translaas.exceptions import TranslaasApiException
 from translaas.models.enums import CacheMode
@@ -190,8 +191,8 @@ async def test_get_project_with_flat_json_format(cache_provider: MockCacheProvid
             mock_get.return_value = mock_resp
             p = await client.get_project("p", "en", format="flat-json")
         assert _params_from_get_call(mock_get)["format"] == "flat-json"
-        assert p.groups["common.welcome"] == "Hello"
-        assert p.groups["errors.404"] == "Missing"
+        assert p.groups["common"]["welcome"] == "Hello"
+        assert p.groups["errors"]["404"] == "Missing"
 
 
 @pytest.mark.asyncio
@@ -210,7 +211,7 @@ async def test_conditional_get_entry_304_uses_seeded_cache(
         use_conditional_requests=True,
     )
     async with TranslaasClient(opts, cache_provider=cache_provider) as client:
-        cache_key = client._build_cache_key("entry", group="g", entry="e", lang="en")
+        cache_key = CacheKeyBuilder.build_entry_key("g", "e", "en")
         client._etag_by_resource[cache_key] = 'W/"etag-1"'
         cache_provider.set(cache_key, "body-after-304")
         r304 = httpx.Response(
@@ -225,7 +226,7 @@ async def test_conditional_get_entry_304_uses_seeded_cache(
 
 
 @pytest.mark.asyncio
-async def test_conditional_get_entry_304_without_cache_raises() -> None:
+async def test_conditional_get_entry_304_without_cache_returns_empty() -> None:
     opts = TranslaasOptions(
         api_key="k",
         base_url="https://api.test.com",
@@ -246,8 +247,7 @@ async def test_conditional_get_entry_304_without_cache_raises() -> None:
         with patch.object(client._http_client, "get", new_callable=AsyncMock) as mock_get:
             mock_get.side_effect = [r1, r304]
             await client.get_entry("g", "e", "en")
-            with pytest.raises(TranslaasApiException, match="304 Not Modified but no cached"):
-                await client.get_entry("g", "e", "en")
+            assert await client.get_entry("g", "e", "en") == ""
 
 
 @pytest.mark.asyncio
@@ -262,7 +262,7 @@ async def test_conditional_get_project_304_uses_json_cache(
     )
     payload = {"groups": {"g": {"e": "v"}}}
     async with TranslaasClient(opts, cache_provider=cache_provider) as client:
-        cache_key = client._build_cache_key("project", project="p", lang="en")
+        cache_key = CacheKeyBuilder.build_project_key("p", "en")
         client._etag_by_resource[cache_key] = "pv1"
         cache_provider.set(cache_key, json.dumps(payload))
         r304 = httpx.Response(
@@ -288,7 +288,7 @@ async def test_conditional_get_project_locales_304_uses_cache(
         use_conditional_requests=True,
     )
     async with TranslaasClient(opts, cache_provider=cache_provider) as client:
-        cache_key = client._build_cache_key("locales", project="p")
+        cache_key = CacheKeyBuilder.build_locales_key("p")
         client._etag_by_resource[cache_key] = "loc1"
         cache_provider.set(cache_key, json.dumps({"locales": ["en", "de"]}))
         r304 = httpx.Response(
@@ -311,7 +311,7 @@ async def test_conditional_get_group_304_uses_json_cache(cache_provider: MockCac
     )
     payload = {"entries": {"k": "v"}}
     async with TranslaasClient(opts, cache_provider=cache_provider) as client:
-        cache_key = client._build_cache_key("group", project="p", group="g", lang="en")
+        cache_key = CacheKeyBuilder.build_group_key("p", "g", "en")
         client._etag_by_resource[cache_key] = "grp1"
         cache_provider.set(cache_key, json.dumps(payload))
         r304 = httpx.Response(
@@ -325,7 +325,7 @@ async def test_conditional_get_group_304_uses_json_cache(cache_provider: MockCac
 
 
 @pytest.mark.asyncio
-async def test_conditional_get_group_304_without_cache_raises(
+async def test_conditional_get_group_304_without_cache_returns_empty(
     cache_provider: MockCacheProvider,
 ) -> None:
     opts = TranslaasOptions(
@@ -348,8 +348,8 @@ async def test_conditional_get_group_304_without_cache_raises(
         with patch.object(client._http_client, "get", new_callable=AsyncMock) as mock_get:
             mock_get.side_effect = [r1, r304]
             await client.get_group("p", "g", "en")
-            with pytest.raises(TranslaasApiException, match="no cached group"):
-                await client.get_group("p", "g", "en")
+            g = await client.get_group("p", "g", "en")
+            assert g.entries == {}
 
 
 @pytest.mark.asyncio
@@ -373,7 +373,7 @@ async def test_get_offline_cache_passes_channel_and_v_per_call(
 
 
 @pytest.mark.asyncio
-async def test_conditional_get_project_304_without_cache_raises(
+async def test_conditional_get_project_304_without_cache_returns_empty(
     cache_provider: MockCacheProvider,
 ) -> None:
     opts = TranslaasOptions(
@@ -397,12 +397,12 @@ async def test_conditional_get_project_304_without_cache_raises(
         with patch.object(client._http_client, "get", new_callable=AsyncMock) as mock_get:
             mock_get.side_effect = [r1, r304]
             await client.get_project("p", "en")
-            with pytest.raises(TranslaasApiException, match="no cached project"):
-                await client.get_project("p", "en")
+            p = await client.get_project("p", "en")
+            assert p.groups == {}
 
 
 @pytest.mark.asyncio
-async def test_conditional_get_project_locales_304_without_cache_raises(
+async def test_conditional_get_project_locales_304_without_cache_returns_empty(
     cache_provider: MockCacheProvider,
 ) -> None:
     opts = TranslaasOptions(
@@ -425,12 +425,12 @@ async def test_conditional_get_project_locales_304_without_cache_raises(
         with patch.object(client._http_client, "get", new_callable=AsyncMock) as mock_get:
             mock_get.side_effect = [r1, r304]
             await client.get_project_locales("p")
-            with pytest.raises(TranslaasApiException, match="no cached locales"):
-                await client.get_project_locales("p")
+            loc = await client.get_project_locales("p")
+            assert loc.locales == []
 
 
 @pytest.mark.asyncio
-async def test_offline_cache_304_raises() -> None:
+async def test_offline_cache_304_returns_not_modified() -> None:
     opts = TranslaasOptions(
         api_key="k",
         base_url="https://api.test.com",
@@ -439,12 +439,14 @@ async def test_offline_cache_304_raises() -> None:
     async with TranslaasClient(opts) as client:
         r304 = httpx.Response(
             304,
+            headers={"ETag": 'W/"off"'},
             request=httpx.Request("GET", "https://api.test.com/sdk/v1/translations/offline-cache"),
         )
         with patch.object(client._http_client, "get", new_callable=AsyncMock) as mock_get:
             mock_get.return_value = r304
-            with pytest.raises(TranslaasApiException, match="offline cache"):
-                await client.get_offline_cache("p")
+            result = await client.get_offline_cache("p")
+        assert result.not_modified is True
+        assert result.content is None
 
 
 @pytest.mark.asyncio
@@ -519,7 +521,9 @@ async def test_report_missing_keys_400_raises() -> None:
         with patch.object(client._http_client, "post", new_callable=AsyncMock) as mock_post:
             mock_post.return_value = mock_resp
             with pytest.raises(TranslaasApiException):
-                await client.report_missing_keys([])
+                await client.report_missing_keys(
+                    [ReportMissingKeyItem("g", "e", "en")]
+                )
 
 
 @pytest.mark.asyncio
@@ -535,7 +539,9 @@ async def test_report_missing_non_202_raises_when_not_successful() -> None:
         with patch.object(client._http_client, "post", new_callable=AsyncMock) as mock_post:
             mock_post.return_value = mock_resp
             with pytest.raises(TranslaasApiException):
-                await client.report_missing_keys([])
+                await client.report_missing_keys(
+                    [ReportMissingKeyItem("g", "e", "en")]
+                )
 
 
 @pytest.mark.asyncio

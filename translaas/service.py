@@ -16,7 +16,12 @@ from translaas.exceptions import (
 from translaas.language.resolver import LanguageResolver
 from translaas.models.options import TranslaasOptions
 from translaas.models.protocols import ITranslaasCacheProvider, ITranslaasService
-from translaas.models.responses import ProjectLocales, TranslationGroup, TranslationProject
+from translaas.models.responses import (
+    OfflineCacheDownloadResult,
+    ProjectLocales,
+    TranslationGroup,
+    TranslationProject,
+)
 from translaas.models.sdk_payloads import ReportMissingKeyItem, ValidateApiKeyResult
 
 
@@ -579,7 +584,7 @@ class TranslaasService(ITranslaasService):
         include_context: Optional[bool] = None,
         channel: Optional[str] = None,
         snapshot_version: Optional[str] = None,
-    ) -> bytes:
+    ) -> OfflineCacheDownloadResult:
         """Download the offline ZIP bundle for a project."""
         client = self._ensure_client()
         return await client.get_offline_cache(

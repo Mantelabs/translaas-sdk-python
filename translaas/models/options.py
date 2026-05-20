@@ -2,9 +2,12 @@
 
 from dataclasses import dataclass, field
 from datetime import timedelta
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 from translaas.models.enums import CacheMode, OfflineFallbackMode
+
+if TYPE_CHECKING:
+    from translaas.models.request_context import SdkTranslationQueryParams
 
 
 def normalize_translaas_base_url(url: str) -> str:
@@ -126,6 +129,10 @@ class TranslaasOptions:
     use_conditional_requests: bool = False
     #: Header name for the API key (default matches OpenAPI).
     api_key_header: str = "X-Api-Key"
+    #: Path prefix for SDK translation routes (default ``/sdk/v1/translations``).
+    sdk_translations_path_prefix: str = "/sdk/v1/translations"
+    #: Default SDK query params merged into translation requests.
+    default_sdk_query: Optional["SdkTranslationQueryParams"] = None
 
     def __post_init__(self) -> None:
         """Validate configuration options after initialization.
@@ -140,3 +147,7 @@ class TranslaasOptions:
         self.base_url = normalize_translaas_base_url(self.base_url)
         if not self.base_url:
             raise ValueError("base_url is required and cannot be empty")
+        prefix = (self.sdk_translations_path_prefix or "/sdk/v1/translations").strip()
+        if not prefix.startswith("/"):
+            prefix = "/" + prefix
+        self.sdk_translations_path_prefix = prefix.rstrip("/") or "/sdk/v1/translations"

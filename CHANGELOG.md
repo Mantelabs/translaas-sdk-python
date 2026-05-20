@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `TranslaasRequestContext` and `SdkTranslationQueryParams` for per-request channel, version, project, and conditional GET.
+- `CacheKeyBuilder` with .NET-compatible colon-separated cache keys.
+- `sdk_translations_path_prefix` and `default_sdk_query` on `TranslaasOptions`.
+- `OfflineCacheDownloadResult` for offline ZIP downloads (ETag, filename, `not_modified`).
+- `format=flat-json` composite-key parsing for project responses.
+- Text query auto-injects plural parameter `N` when `n` is set (invariant formatting).
+
+### Changed
+
+- **Breaking:** `get_offline_cache` returns `OfflineCacheDownloadResult` instead of raw `bytes`.
+- **Breaking:** In-memory cache keys use `CacheKeyBuilder` format (invalidates prior cache entries).
+- 204/304 responses match .NET client semantics (empty fallbacks instead of exceptions when uncached).
+- `report_missing_keys` with an empty list performs no HTTP request.
+- API error messages prefer JSON `{code, message}` envelopes when present.
+
 ## [0.3.0b1] - 2026-04-06
 
 ### Added

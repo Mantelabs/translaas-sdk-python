@@ -6,7 +6,12 @@ These use structural typing (duck typing) rather than inheritance.
 
 from typing import Dict, List, Optional, Protocol, overload
 
-from translaas.models.responses import ProjectLocales, TranslationGroup, TranslationProject
+from translaas.models.responses import (
+    OfflineCacheDownloadResult,
+    ProjectLocales,
+    TranslationGroup,
+    TranslationProject,
+)
 from translaas.models.sdk_payloads import ReportMissingKeyItem, ValidateApiKeyResult
 
 
@@ -80,7 +85,7 @@ class ITranslaasClient(Protocol):
         include_context: Optional[bool] = None,
         channel: Optional[str] = None,
         snapshot_version: Optional[str] = None,
-    ) -> bytes:
+    ) -> OfflineCacheDownloadResult:
         """Download offline translation ZIP bundle."""
         ...
 
