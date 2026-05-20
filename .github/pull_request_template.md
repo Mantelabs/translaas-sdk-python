@@ -1,40 +1,40 @@
-## [Feature/Bug Fix/Refactor] Brief Description
+## Summary
 
-### Summary
 [Provide a clear and concise summary of what this PR does]
+
+### Area
+
+- [ ] Platform (`platform/mantelabs-translaas` — backend, frontend, infra)
+- [ ] SDK (language: ___)
+- [ ] Examples
+- [ ] Meta-repo / docs / tooling (`translaas-all` root)
 
 ### Changes
 
-#### Backend
-- [ ] [Backend change 1]
-- [ ] [Backend change 2]
-- [ ] [Backend change 3]
+- [ ] [Change 1]
+- [ ] [Change 2]
+- [ ] [Change 3]
 
-#### Frontend
-- [ ] [Frontend change 1]
-- [ ] [Frontend change 2]
-- [ ] [Frontend change 3]
+### Technical notes
 
-### Technical Notes
-- [Any relevant technical context, constraints, or considerations]
-- [References to related code, patterns, or architecture decisions]
+- [Relevant context, constraints, or architecture decisions]
 - [Breaking changes, if any]
 
 ### Testing
+
 - [ ] Unit tests added/updated
-- [ ] Integration tests added/updated
+- [ ] Integration / component tests added/updated (if applicable)
 - [ ] Manual testing completed
-- [ ] [Specific test scenarios covered]
+- [ ] [Specific scenarios covered]
 
 ### Checklist
-- [ ] Code follows project style guidelines
+
+- [ ] Code follows project style guidelines (see `.aispecs/specs/` when applicable)
 - [ ] Self-review completed
-- [ ] Comments added for complex logic
 - [ ] Documentation updated (if needed)
-- [ ] No new warnings generated
 - [ ] Tests pass locally
-- [ ] All todos completed or removed
+- [ ] Conventional Commits used for commit messages
 
-### Related Issues
-Closes #[issue-number]
+### Related issues
 
+Closes #
