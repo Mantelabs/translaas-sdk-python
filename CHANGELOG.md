@@ -7,19 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0b2] - 2026-05-20
+
+SDK v1 HTTP parity (Phases A–C for [#41](https://github.com/acuencadev/translaas-sdk-python/issues/41)).
+
 ### Added
 
-- `CachingTranslaasClient` with `CACHE_FIRST`, `API_FIRST`, and `CACHE_ONLY` offline fallback modes.
-- On-disk offline layout aligned with HTTP spec §7.6 (`manifest.json`, `{project}/locales.json`, `{project}/{lang}/project.json` wrappers).
-- `parse_offline_zip`, `OfflineBundle`, and `OfflineCacheSyncService` for ZIP ingestion and API sync.
-- `PluralResolver` and `ParameterReplacer` for offline entry resolution from cached groups.
-- `create_translaas_client` / `create_offline_cache_provider` factory helpers; `TranslaasService` wires offline mode automatically.
-- `TranslaasRequestContext` and `SdkTranslationQueryParams` for per-request channel, version, project, and conditional GET.
-- `CacheKeyBuilder` with .NET-compatible colon-separated cache keys.
-- `sdk_translations_path_prefix` and `default_sdk_query` on `TranslaasOptions`.
-- `OfflineCacheDownloadResult` for offline ZIP downloads (ETag, filename, `not_modified`).
-- `format=flat-json` composite-key parsing for project responses.
+- `TranslaasRequestContext`, `SdkTranslationQueryParams`, `CacheKeyBuilder`, and `OfflineCacheDownloadResult`.
+- `sdk_translations_path_prefix`, `default_sdk_query`, and `format=flat-json` composite-key project parsing.
 - Text query auto-injects plural parameter `N` when `n` is set (invariant formatting).
+- `CachingTranslaasClient` with `CACHE_FIRST`, `API_FIRST`, and `CACHE_ONLY` offline fallback modes.
+- On-disk offline layout aligned with HTTP spec §7.6; `parse_offline_zip`, `OfflineCacheSyncService`, `PluralResolver`, `ParameterReplacer`.
+- `create_translaas_client` / `create_offline_cache_provider`; `TranslaasService` wires offline mode when enabled.
+- Meta-repo sample `examples/python/offline-node`; extended `build_translaas_options` / `from_env` / framework config helpers.
 
 ### Changed
 
@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 204/304 responses match .NET client semantics (empty fallbacks instead of exceptions when uncached).
 - `report_missing_keys` with an empty list performs no HTTP request.
 - API error messages prefer JSON `{code, message}` envelopes when present.
+- README corrected (single package, offline docs); Django/Flask use shared config builders; version `0.3.0b2`.
 
 ## [0.3.0b1] - 2026-04-06
 
