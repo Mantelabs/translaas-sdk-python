@@ -133,13 +133,14 @@ class Translaas:
 
         self.app = app
 
-        # Get options from parameter or app state
+        # Get options from parameter, app state, config dict, or environment
         if options is None:
-            if not hasattr(app.state, "translaas_options"):
-                raise ValueError(
-                    "TranslaasOptions must be provided either as parameter or set in app.state.translaas_options"
-                )
-            options = app.state.translaas_options
+            if hasattr(app.state, "translaas_options"):
+                options = app.state.translaas_options
+            else:
+                from translaas.extensions.config import fastapi_config
+
+                options = fastapi_config(app)
 
         self._options = options
         app.state.translaas_options = options

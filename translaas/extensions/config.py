@@ -206,3 +206,28 @@ def flask_config(app_config: Dict[str, Any]) -> TranslaasOptions:
 def django_config(settings_module: Any) -> TranslaasOptions:
     """Create ``TranslaasOptions`` from Django settings."""
     return build_translaas_options(_config_from_mapped_source(settings_module, _COMMON_KEY_MAPPING))
+
+
+def fastapi_config(app: Any) -> TranslaasOptions:
+    """Create ``TranslaasOptions`` from FastAPI app state or environment.
+
+    Resolution order:
+
+    1. ``app.state.translaas_config`` — dict passed to ``build_translaas_options``, or a
+       pre-built ``TranslaasOptions`` instance.
+    2. ``TRANSLAAS_*`` attributes on ``app.state`` (same keys as Flask/Django).
+    3. ``from_env()`` when ``TRANSLAAS_API_KEY`` and ``TRANSLAAS_BASE_URL`` are set.
+    """
+    state = app.state
+    raw = getattr(state, "translaas_config", None)
+    if raw is not None:
+        if isinstance(raw, TranslaasOptions):
+            return raw
+        if isinstance(raw, dict):
+            return build_translaas_options(raw)
+
+    mapped = _config_from_mapped_source(state, _COMMON_KEY_MAPPING)
+    if mapped.get("api_key") and mapped.get("base_url"):
+        return build_translaas_options(mapped)
+
+    return from_env()

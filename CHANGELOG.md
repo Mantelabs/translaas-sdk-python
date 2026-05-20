@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `merge_request_context` and `TranslaasService` forwarding of `request_context` / `sdk_query` on `t()`, `get_entry()`, `get_group()`, `get_project()`, `get_project_locales()`, and `get_offline_cache()`.
+- `CachingTranslaasClient` passes `request_context` through to the inner client on API paths.
+- `fastapi_config()` helper; FastAPI `init_app()` resolves options from `app.state.translaas_config`, mapped state keys, or environment (aligned with Django/Flask).
+
 ## [0.3.0b2] - 2026-05-20
 
 SDK v1 HTTP parity (Phases A–C for [#41](https://github.com/acuencadev/translaas-sdk-python/issues/41)).

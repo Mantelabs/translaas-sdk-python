@@ -1,10 +1,12 @@
 """Tests for FastAPI integration."""
 
-from unittest.mock import Mock
+import os
+from unittest.mock import Mock, patch
 
 import pytest
 
 from translaas import TranslaasOptions
+from translaas.extensions.config import fastapi_config
 from translaas.extensions.fastapi import (
     FastAPIRequestLanguageProvider,
     FastAPITranslaas,
@@ -51,6 +53,68 @@ class TestFastAPITranslaas:
         translaas.init_app(app, options)
 
         assert app.state.translaas_options == options
+
+    def test_init_app_reads_translaas_config_dict(self) -> None:
+        """Test init_app builds options from app.state.translaas_config."""
+        from fastapi import FastAPI
+
+        app = FastAPI()
+        app.state.translaas_config = {
+            "api_key": "cfg-key",
+            "base_url": "https://cfg.test.com",
+            "default_project": "proj",
+        }
+
+        translaas = FastAPITranslaas()
+        translaas.init_app(app)
+
+        assert translaas._options is not None
+        assert translaas._options.api_key == "cfg-key"
+        assert translaas._options.default_project == "proj"
+
+    def test_init_app_reads_state_mapped_keys(self) -> None:
+        """Test init_app builds options from TRANSLAAS_* attributes on app.state."""
+        from fastapi import FastAPI
+
+        app = FastAPI()
+        app.state.TRANSLAAS_API_KEY = "state-key"
+        app.state.TRANSLAAS_BASE_URL = "https://state.test.com"
+
+        translaas = FastAPITranslaas()
+        translaas.init_app(app)
+
+        assert translaas._options.api_key == "state-key"
+
+    def test_init_app_reads_from_env_when_no_state_config(self) -> None:
+        """Test init_app falls back to from_env when state has no config."""
+        from fastapi import FastAPI
+
+        app = FastAPI()
+        env = {
+            "TRANSLAAS_API_KEY": "env-key",
+            "TRANSLAAS_BASE_URL": "https://env.test.com",
+        }
+        with patch.dict(os.environ, env, clear=False):
+            translaas = FastAPITranslaas()
+            translaas.init_app(app)
+        assert translaas._options.api_key == "env-key"
+
+
+class TestFastAPIConfig:
+    """Tests for fastapi_config helper."""
+
+    def test_fastapi_config_from_dict_on_state(self) -> None:
+        from fastapi import FastAPI
+
+        app = FastAPI()
+        app.state.translaas_config = {
+            "api_key": "k",
+            "base_url": "https://api.test.com",
+            "channel": "beta",
+        }
+        options = fastapi_config(app)
+        assert options.api_key == "k"
+        assert options.channel == "beta"
 
     async def test_get_translaas_service_dependency(self) -> None:
         """Test get_translaas_service dependency function."""
