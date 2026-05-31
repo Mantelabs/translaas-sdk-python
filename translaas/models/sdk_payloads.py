@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Optional
 
+from translaas.exceptions import TranslaasConfigurationException
+
 
 @dataclass(frozen=True)
 class ReportMissingKeyItem:
@@ -29,6 +31,8 @@ class ValidateApiKeyResult:
     is_valid: bool
     tenant_id: str
     project_id: Optional[str]
+    project_ids: tuple[str, ...]
+    default_project_id: Optional[str]
     integration_name: Optional[str]
     authenticated_at: Optional[str]
 
@@ -39,13 +43,43 @@ class ValidateApiKeyResult:
                 return None
             return str(val)
 
+        raw_ids = data.get("projectIds") or []
+        project_ids = tuple(str(item) for item in raw_ids) if isinstance(raw_ids, list) else ()
+
         return cls(
             is_valid=bool(data.get("isValid", False)),
             tenant_id=_str_or_none(data.get("tenantId")) or "",
             project_id=_str_or_none(data.get("projectId")),
+            project_ids=project_ids,
+            default_project_id=_str_or_none(data.get("defaultProjectId")),
             integration_name=_str_or_none(data.get("integrationName")),
             authenticated_at=_str_or_none(data.get("authenticatedAt")),
         )
+
+
+def resolve_default_project_id(
+    configured_project: Optional[str], validate: ValidateApiKeyResult
+) -> str:
+    """Resolve default project id from validate when not configured explicitly."""
+    configured = (configured_project or "").strip()
+    if configured:
+        return configured
+
+    if not validate.project_ids:
+        raise TranslaasConfigurationException(
+            "Tenant-level API key requires default_project in SDK configuration."
+        )
+
+    resolved = (
+        (validate.default_project_id or "").strip()
+        or (validate.project_id or "").strip()
+        or validate.project_ids[0].strip()
+    )
+    if not resolved:
+        raise TranslaasConfigurationException(
+            "Could not resolve a default project from the validate API key response."
+        )
+    return resolved
 
 
 def report_missing_keys_body(keys: list[ReportMissingKeyItem]) -> dict[str, Any]:
