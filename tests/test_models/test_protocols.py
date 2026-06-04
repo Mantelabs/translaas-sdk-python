@@ -96,6 +96,8 @@ class MockTranslaasClient:
             is_valid=True,
             tenant_id="01ARZ3NDEKTSV4RRFFQ69G5FAV",
             project_id=None,
+            project_ids=(),
+            default_project_id=None,
             integration_name="test",
             authenticated_at="2020-01-01T00:00:00Z",
         )

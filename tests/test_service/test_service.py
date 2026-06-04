@@ -407,6 +407,8 @@ class TestTranslaasServiceSdkDelegates:
             is_valid=True,
             tenant_id="t",
             project_id="p",
+            project_ids=("p",),
+            default_project_id="p",
             integration_name="i",
             authenticated_at="2020-01-01T00:00:00Z",
         )
