@@ -69,6 +69,8 @@ def inner_client() -> AsyncMock:
             is_valid=True,
             tenant_id="tenant",
             project_id=None,
+            project_ids=(),
+            default_project_id=None,
             integration_name=None,
             authenticated_at=None,
         )

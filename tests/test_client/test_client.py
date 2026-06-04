@@ -526,6 +526,8 @@ class TestTranslaasClientSdkExtras:
                 "isValid": True,
                 "tenantId": "01ARZ3NDEKTSV4RRFFQ69G5FAV",
                 "projectId": None,
+                "projectIds": ["p1", "p2"],
+                "defaultProjectId": "p1",
                 "integrationName": "dev",
                 "authenticatedAt": "2024-01-01T00:00:00Z",
             },
@@ -537,6 +539,8 @@ class TestTranslaasClientSdkExtras:
             assert isinstance(result, ValidateApiKeyResult)
             assert result.is_valid is True
             assert result.tenant_id == "01ARZ3NDEKTSV4RRFFQ69G5FAV"
+            assert result.project_ids == ("p1", "p2")
+            assert result.default_project_id == "p1"
             mock_get.assert_called_once_with("api/v1/api-keys/validate")
 
     @pytest.mark.asyncio
