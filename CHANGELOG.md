@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0b1] - 2026-06-09
+
+Minor beta release on **0.4.0b1**. Resolves default project id from the validate API key response for multi-project keys and aligns `t()` / offline plural and parameter behavior with the .NET SDK (**0.4.1-beta** line). Coordinated with JS **0.5.0-beta** alignment work.
+
+### Added
+
+- **`resolve_default_project_id()`** — shared helper for default project resolution from validate responses ([#44](https://github.com/acuencadev/translaas-sdk-python/pull/44))
+- **`ValidateApiKeyResult.project_ids`** and **`default_project_id`** — multi-project API key metadata from `GET /api/v1/api-keys/validate`
+- **`TranslaasService.t()`** — .NET-aligned overloads supporting **`number` and `parameters` together** (with or without explicit `lang`) ([#47](https://github.com/acuencadev/translaas-sdk-python/pull/47))
+- **`translaas.i18n.offline_helpers`** — offline plural (`one`/`other`) and `{name}` substitution helpers matching .NET `CachingTranslaasClient`
+
+### Changed
+
+- **Breaking (offline):** `CachingTranslaasClient` offline plural selection uses **one/other only** (language-agnostic), matching .NET instead of full CLDR `PluralResolver` rules
+- **Breaking (offline):** offline parameter substitution supports **`{name}`** placeholders only (no `{{name}}` or `%name%`), matching .NET `SubstituteParameters`
+- **`ParameterReplacer`** — case-insensitive `N` detection when merging plural count into parameters
+
+### Fixed
+
+- Tenant-level API keys without a configured default project fail fast with a clear **`TranslaasConfigurationException`**
+- Multi-project API keys resolve the backend default project from validate when `default_project` is omitted
+
+### Migration
+
+1. **From `0.4.0b1`:** bump to **`0.5.0b1`**; set `default_project` explicitly for tenant-level API keys, or rely on validate resolution for multi-project keys.
+2. **Offline cache consumers:** re-test plural and interpolated strings if you depended on CLDR-specific offline rules or `{{name}}` / `%name%` placeholders.
+
 ## [0.4.0b1] - 2026-05-22
 
 Coordinated **beta** release aligning the Python SDK with the **Translaas SDK v1** HTTP surface, the .NET reference implementation, and JS/Java **0.4.0** / **0.4.0-beta** SDK lines. Builds on **0.3.0b1** / **0.3.0b2** SDK v1 parity work ([#41](https://github.com/acuencadev/translaas-sdk-python/issues/41), [#42](https://github.com/acuencadev/translaas-sdk-python/pull/42)).
