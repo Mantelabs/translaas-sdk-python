@@ -12,8 +12,7 @@ from translaas.exceptions import (
     TranslaasApiException,
     TranslaasOfflineCacheMissException,
 )
-from translaas.i18n.parameter_replacer import ParameterReplacer
-from translaas.i18n.plural_resolver import PluralResolver
+from translaas.i18n.offline_helpers import determine_plural_category, substitute_parameters
 from translaas.models.enums import OfflineFallbackMode, PluralCategory
 from translaas.models.options import OfflineCacheOptions
 from translaas.models.protocols import ITranslaasClient
@@ -369,7 +368,7 @@ class CachingTranslaasClient(ITranslaasClient):
             return None
         template: Optional[str] = None
         if group.has_plural_forms(entry):
-            category = PluralResolver.resolve_category(number or 0, lang)
+            category = determine_plural_category(number)
             template = group.get_plural_form(entry, category)
             if template is None and category != PluralCategory.OTHER:
                 template = group.get_plural_form(entry, PluralCategory.OTHER)
@@ -377,7 +376,7 @@ class CachingTranslaasClient(ITranslaasClient):
             template = group.get_value(entry)
         if template is None:
             return None
-        return ParameterReplacer.replace(template, parameters, number=number)
+        return substitute_parameters(template, parameters, number=number)
 
     # --- Group modes ---
 
