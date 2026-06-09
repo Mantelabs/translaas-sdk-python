@@ -281,6 +281,59 @@ class TestTranslaasServiceTMethod:
             )
 
     @pytest.mark.asyncio
+    async def test_t_with_number_and_parameters(self, service: TranslaasService) -> None:
+        """Test t() with plural count and interpolation parameters together."""
+        with patch.object(service._client, "get_entry", new_callable=AsyncMock) as mock_get:
+            mock_get.return_value = "Hello {name}, you have {N} items"
+            result = await service.t("group", "entry", 5, {"name": "John"})
+            assert result == "Hello John, you have 5 items"
+            mock_get.assert_called_once_with(
+                group="group",
+                entry="entry",
+                lang="en",
+                number=5.0,
+                parameters=None,
+                project=None,
+                request_context=None,
+            )
+
+    @pytest.mark.asyncio
+    async def test_t_with_lang_number_and_parameters(self, service: TranslaasService) -> None:
+        """Test t() with explicit language, plural count, and parameters."""
+        with patch.object(service._client, "get_entry", new_callable=AsyncMock) as mock_get:
+            mock_get.return_value = "Hello {name}, you have {N} items"
+            result = await service.t("group", "entry", "fr", 5, {"name": "John"})
+            assert result == "Hello John, you have 5 items"
+            mock_get.assert_called_once_with(
+                group="group",
+                entry="entry",
+                lang="fr",
+                number=5.0,
+                parameters=None,
+                project=None,
+                request_context=None,
+            )
+
+    @pytest.mark.asyncio
+    async def test_t_with_parameters_object_including_number(
+        self, service: TranslaasService
+    ) -> None:
+        """Test t() with a parameters dict that includes a number key."""
+        with patch.object(service._client, "get_entry", new_callable=AsyncMock) as mock_get:
+            mock_get.return_value = "Hello {name}, you have {N} items"
+            result = await service.t("group", "entry", {"number": 3, "name": "Jane"})
+            assert result == "Hello Jane, you have 3 items"
+            mock_get.assert_called_once_with(
+                group="group",
+                entry="entry",
+                lang="en",
+                number=3.0,
+                parameters=None,
+                project=None,
+                request_context=None,
+            )
+
+    @pytest.mark.asyncio
     async def test_t_fails_without_client(self, options: TranslaasOptions) -> None:
         """Test that t() fails when client is not initialized."""
         service = TranslaasService(options)
