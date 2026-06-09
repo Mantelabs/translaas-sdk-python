@@ -21,3 +21,8 @@ def test_percent_legacy_replacement() -> None:
 def test_number_injection() -> None:
     result = ParameterReplacer.replace("{N} items", number=5)
     assert result == "5 items"
+
+
+def test_number_injection_skips_when_lowercase_n_present() -> None:
+    result = ParameterReplacer.replace("{n} items", {"n": "9"}, number=5)
+    assert result == "9 items"
