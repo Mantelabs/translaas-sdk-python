@@ -6,10 +6,11 @@ parameter replacement.
 """
 
 import re
-from typing import Dict, List, Optional, Union, overload
+from typing import Dict, List, Optional, Tuple, Union, overload
 
 from translaas.caching_file.client_factory import create_translaas_client
 from translaas.client.client import TranslaasClient
+from translaas.client.text_query import merge_number_into_parameters
 from translaas.exceptions import (
     TranslaasConfigurationException,
     TranslaasLanguageResolutionException,
@@ -253,6 +254,17 @@ class TranslaasService(ITranslaasService):
         self,
         group: str,
         entry: str,
+        number: float,
+        parameters: Dict[str, str],
+    ) -> str:
+        """Get translation with number and parameters (automatic language resolution)."""
+        ...
+
+    @overload
+    async def t(
+        self,
+        group: str,
+        entry: str,
         parameters: Dict[str, str],
     ) -> str:
         """Get translation with parameters (automatic language resolution).
@@ -341,12 +353,25 @@ class TranslaasService(ITranslaasService):
         """
         ...
 
+    @overload
+    async def t(
+        self,
+        group: str,
+        entry: str,
+        lang: str,
+        number: float,
+        parameters: Dict[str, str],
+    ) -> str:
+        """Get translation with explicit language, number, and parameters."""
+        ...
+
     async def t(  # type: ignore[misc]
         self,
         group: str,
         entry: str,
         lang_or_number_or_params: Optional[Union[str, int, float, Dict[str, str]]] = None,
         number_or_params: Optional[Union[int, float, Dict[str, str]]] = None,
+        parameters: Optional[Dict[str, str]] = None,
         *,
         request_context: Optional[TranslaasRequestContext] = None,
         sdk_query: Optional[SdkTranslationQueryParams] = None,
@@ -367,9 +392,12 @@ class TranslaasService(ITranslaasService):
                 - If float: number for plural form selection (automatic language resolution)
                 - If Dict[str, str]: parameters for string interpolation (automatic language resolution)
                 - If None: uses automatic language resolution
-            number_or_params: Optional number or parameters dict (only used when lang is provided).
-                - If float: number for plural form selection
-                - If Dict[str, str]: parameters for string interpolation
+            number_or_params: Optional number or parameters dict.
+                - With explicit lang: number or parameters for the fourth positional argument
+                - With automatic language: parameters when third argument is a number
+            parameters: Optional parameters dict (fifth positional or keyword).
+                Use with ``t(group, entry, lang, number, parameters)`` or
+                ``t(group, entry, number, parameters)``.
 
         Returns:
             The translated string with parameters replaced if provided.
@@ -380,31 +408,11 @@ class TranslaasService(ITranslaasService):
         """
         client = self._ensure_client()
 
-        # Parse arguments based on their types
-        lang: Optional[str] = None
-        number: Optional[float] = None
-        parameters: Optional[Dict[str, str]] = None
-
-        if lang_or_number_or_params is None:
-            # t(group, entry) - automatic language resolution
-            pass
-        elif isinstance(lang_or_number_or_params, str):
-            # t(group, entry, lang) or t(group, entry, lang, number/params)
-            lang = lang_or_number_or_params
-            if isinstance(number_or_params, (int, float)):
-                number = float(number_or_params)
-            elif isinstance(number_or_params, dict):
-                parameters = number_or_params
-        elif isinstance(lang_or_number_or_params, (int, float)):
-            # t(group, entry, number) - automatic language resolution with plural
-            number = float(lang_or_number_or_params)
-        elif isinstance(lang_or_number_or_params, dict):
-            # t(group, entry, parameters) - automatic language resolution with params
-            parameters = lang_or_number_or_params
-        else:
-            raise TypeError(
-                f"Invalid argument type for lang_or_number_or_params: {type(lang_or_number_or_params)}"
-            )
+        lang, number, resolved_parameters = self._parse_t_arguments(
+            lang_or_number_or_params,
+            number_or_params,
+            parameters,
+        )
 
         # Resolve language
         resolved_lang = await self._resolve_language(lang)
@@ -426,11 +434,53 @@ class TranslaasService(ITranslaasService):
             request_context=ctx,
         )
 
-        # Replace parameters client-side
-        if parameters:
-            translation = self._replace_parameters(translation, parameters)
+        merged_parameters = merge_number_into_parameters(number, resolved_parameters)
+        if merged_parameters:
+            translation = self._replace_parameters(translation, merged_parameters)
 
         return translation
+
+    @staticmethod
+    def _parse_t_arguments(
+        lang_or_number_or_params: Optional[Union[str, int, float, Dict[str, str]]],
+        number_or_params: Optional[Union[int, float, Dict[str, str]]],
+        parameters: Optional[Dict[str, str]],
+    ) -> Tuple[Optional[str], Optional[float], Optional[Dict[str, str]]]:
+        """Normalize positional ``t()`` arguments to match .NET ``ITranslaasService.T``."""
+        lang: Optional[str] = None
+        number: Optional[float] = None
+        resolved_parameters = parameters
+
+        def _merge_parameters_dict(value: Dict[str, str]) -> None:
+            nonlocal number, resolved_parameters
+            extracted_number = value.pop("number", None)
+            if isinstance(extracted_number, (int, float)):
+                number = float(extracted_number)
+            merged = dict(value)
+            if resolved_parameters:
+                merged = {**merged, **resolved_parameters}
+            resolved_parameters = merged or None
+
+        if lang_or_number_or_params is None:
+            pass
+        elif isinstance(lang_or_number_or_params, str):
+            lang = lang_or_number_or_params
+            if isinstance(number_or_params, (int, float)):
+                number = float(number_or_params)
+            elif isinstance(number_or_params, dict):
+                _merge_parameters_dict(dict(number_or_params))
+        elif isinstance(lang_or_number_or_params, (int, float)):
+            number = float(lang_or_number_or_params)
+            if isinstance(number_or_params, dict):
+                _merge_parameters_dict(dict(number_or_params))
+        elif isinstance(lang_or_number_or_params, dict):
+            _merge_parameters_dict(dict(lang_or_number_or_params))
+        else:
+            raise TypeError(
+                f"Invalid argument type for lang_or_number_or_params: {type(lang_or_number_or_params)}"
+            )
+
+        return lang, number, resolved_parameters
 
     async def get_entry(
         self,
@@ -489,8 +539,9 @@ class TranslaasService(ITranslaasService):
             request_context=ctx,
         )
 
-        if parameters:
-            translation = self._replace_parameters(translation, parameters)
+        merged_parameters = merge_number_into_parameters(number, parameters)
+        if merged_parameters:
+            translation = self._replace_parameters(translation, merged_parameters)
 
         return translation
 

@@ -48,7 +48,7 @@ class ParameterReplacer:
         if parameters:
             for key, value in parameters.items():
                 merged[key] = ParameterReplacer._to_string(value)
-        if number is not None and "N" not in merged and "n" not in merged:
+        if number is not None and "N" not in {k.upper() for k in merged}:
             merged["N"] = format(number, "g")
         return merged
 

@@ -126,6 +126,17 @@ class ITranslaasService(Protocol):
         self,
         group: str,
         entry: str,
+        number: float,
+        parameters: Dict[str, str],
+    ) -> str:
+        """Get translation with number and parameters (automatic language resolution)."""
+        ...
+
+    @overload
+    async def t(
+        self,
+        group: str,
+        entry: str,
         parameters: Dict[str, str],
     ) -> str:
         """Get translation with parameters (automatic language resolution)."""
@@ -161,6 +172,18 @@ class ITranslaasService(Protocol):
         parameters: Dict[str, str],
     ) -> str:
         """Get translation with explicit language and parameters."""
+        ...
+
+    @overload
+    async def t(
+        self,
+        group: str,
+        entry: str,
+        lang: str,
+        number: float,
+        parameters: Dict[str, str],
+    ) -> str:
+        """Get translation with explicit language, number, and parameters."""
         ...
 
     async def t(  # type: ignore[misc]

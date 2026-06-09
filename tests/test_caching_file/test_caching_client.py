@@ -171,6 +171,56 @@ async def test_get_entry_plural_from_cache(
 
 
 @pytest.mark.asyncio
+async def test_get_entry_plural_uses_one_other_only(
+    inner_client: AsyncMock, offline_options: OfflineCacheOptions
+) -> None:
+    cache = _MockOfflineCache()
+    cache.groups[f"{DEFAULT_PROJECT}:items:fr"] = TranslationGroup(
+        entries={"count": {"one": "1 article", "other": "{N} articles"}}
+    )
+    client = _create_client(inner_client, cache, OfflineFallbackMode.CACHE_ONLY, offline_options)
+    zero = await client.get_entry("items", "count", "fr", number=0)
+    assert zero == "0 articles"
+
+
+@pytest.mark.asyncio
+async def test_get_entry_parameter_substitution_from_cache(
+    inner_client: AsyncMock, offline_options: OfflineCacheOptions
+) -> None:
+    cache = _MockOfflineCache()
+    cache.groups[f"{DEFAULT_PROJECT}:messages:en"] = TranslationGroup(
+        entries={"greeting": "Hello {userName}, you have {count} items"}
+    )
+    client = _create_client(inner_client, cache, OfflineFallbackMode.CACHE_ONLY, offline_options)
+    result = await client.get_entry(
+        "messages",
+        "greeting",
+        "en",
+        parameters={"userName": "John", "count": "5"},
+    )
+    assert result == "Hello John, you have 5 items"
+
+
+@pytest.mark.asyncio
+async def test_get_entry_combines_number_and_parameters(
+    inner_client: AsyncMock, offline_options: OfflineCacheOptions
+) -> None:
+    cache = _MockOfflineCache()
+    cache.groups[f"{DEFAULT_PROJECT}:messages:en"] = TranslationGroup(
+        entries={"greeting": "Hello {userName}, you have {N} items and {pending} pending"}
+    )
+    client = _create_client(inner_client, cache, OfflineFallbackMode.CACHE_ONLY, offline_options)
+    result = await client.get_entry(
+        "messages",
+        "greeting",
+        "en",
+        number=5,
+        parameters={"userName": "John", "pending": "3"},
+    )
+    assert result == "Hello John, you have 5 items and 3 pending"
+
+
+@pytest.mark.asyncio
 async def test_get_group_cache_first_from_cache(
     inner_client: AsyncMock, offline_options: OfflineCacheOptions
 ) -> None:
