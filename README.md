@@ -75,6 +75,9 @@ welcome_auto = await translaas.t('common', 'welcome')  # lang omitted
 
 # With pluralization
 items = await translaas.t('messages', 'item', LanguageCodes.ENGLISH, 5)
+
+# With pluralization and interpolation parameters
+items = await translaas.t('messages', 'item', LanguageCodes.ENGLISH, 5, {'name': 'John'})
 ```
 
 **Option B: Using TranslaasClient (Full API access)**
@@ -207,6 +210,18 @@ async with TranslaasService(options) as service:
 
 Use `OfflineCacheSyncService` to populate the cache from the API or an offline ZIP bundle (`parse_offline_zip`).
 
+### .NET SDK parity
+
+The Python SDK aligns with the [.NET Translaas.SDK](https://github.com/acuencadev/Translaas.SDK) as the cross-language contract:
+
+| Area | Online (`TranslaasClient` / `t()`) | Offline (`CachingTranslaasClient`) |
+| ---- | ----------------------------------- | ---------------------------------- |
+| Plural selection | Server resolves via `n` / `N` query params | One/other only (`1 → one`, else `other`; language ignored) |
+| Parameter substitution | Server resolves when using `TranslaasClient.get_entry()`; `TranslaasService.t()` applies client-side `{name}` / `{{name}}` after fetch | `{name}` placeholders only; case-insensitive keys; auto-`N` from `number` unless explicit `N` is provided |
+| `t()` overloads | `t(group, entry, lang, number, parameters)` and auto-language variants | Same service API; offline cache path uses .NET-aligned helpers |
+
+`TranslaasService.t()` sends `number` to the API for plural resolution and performs parameter replacement client-side (matching .NET `ITranslaasService.T`). Offline cache reads use `determine_plural_category` and `substitute_parameters` from `translaas.i18n.offline_helpers`.
+
 ## Usage Examples
 
 ### Get Single Translation Entry
@@ -224,6 +239,9 @@ translation = await translaas.t('ui', 'button.save')  # lang omitted
 
 # With pluralization
 message = await translaas.t('messages', 'item.count', LanguageCodes.ENGLISH, 5)
+
+# With pluralization and parameters
+message = await translaas.t('messages', 'item.count', LanguageCodes.ENGLISH, 5, {'name': 'John'})
 ```
 
 **Using TranslaasClient (Full API):**
