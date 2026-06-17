@@ -5,12 +5,11 @@ from __future__ import annotations
 import json
 import os
 import shutil
-import tempfile
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+from typing import Any, Optional, Union, cast
 
-from translaas import __version__ as sdk_version
+from translaas.__version__ import __version__ as sdk_version
 from translaas.caching_file.offline_models import (
     MANIFEST_VERSION,
     CachedLocales,
@@ -59,8 +58,8 @@ class CacheMetadata:
             now = datetime.now(timezone.utc)
         return now >= self.expires_at
 
-    def to_dict(self) -> Dict[str, Any]:
-        result: Dict[str, Any] = {"created_at": self.created_at.isoformat()}
+    def to_dict(self) -> dict[str, Any]:
+        result: dict[str, Any] = {"created_at": self.created_at.isoformat()}
         if self.expires_at is not None:
             result["expires_at"] = self.expires_at.isoformat()
         if self.project_id is not None:
@@ -72,7 +71,7 @@ class CacheMetadata:
         return result
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "CacheMetadata":
+    def from_dict(cls, data: dict[str, Any]) -> CacheMetadata:
         created_at_str = data.get("created_at", "")
         created_at = datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
         expires_at = None
@@ -116,7 +115,7 @@ class FileCacheProvider(ITranslaasCacheProvider):
         if _is_expired(cached.expires_at):
             path.unlink(missing_ok=True)
             return None
-        return cached.data
+        return cast(TranslationProject, cached.data)
 
     def remove_project(self, project: str, lang: str) -> None:
         """Remove a cached project language bundle."""
@@ -141,7 +140,7 @@ class FileCacheProvider(ITranslaasCacheProvider):
             return None
         if _is_expired(cached.expires_at):
             return None
-        return cached.data
+        return cast(ProjectLocales, cached.data)
 
     def save_project(self, project: str, lang: str, data: TranslationProject) -> None:
         _validate_project_lang(project, lang)
@@ -194,7 +193,7 @@ class FileCacheProvider(ITranslaasCacheProvider):
         self,
         project: str,
         locales: Optional[ProjectLocales],
-        projects_by_lang: Dict[str, TranslationProject],
+        projects_by_lang: dict[str, TranslationProject],
     ) -> None:
         """Write parsed ZIP/API bundle payloads to disk."""
         if locales is not None:
@@ -350,7 +349,7 @@ def _read_wrapper(path: Path, factory, *, remove_on_error: bool = False):  # typ
     return None
 
 
-def _write_json_atomic(path: Path, data: Dict[str, Any]) -> None:
+def _write_json_atomic(path: Path, data: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temp_path = Path(str(path) + ".tmp")
     try:
