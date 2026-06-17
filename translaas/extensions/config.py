@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 from datetime import timedelta
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from translaas.models.enums import CacheMode, OfflineFallbackMode
 from translaas.models.options import OfflineCacheOptions, TranslaasOptions
@@ -45,7 +45,7 @@ def _parse_offline_fallback(value: Any) -> OfflineFallbackMode:
     return OfflineFallbackMode.CACHE_FIRST
 
 
-def build_translaas_options(config: Dict[str, Any]) -> TranslaasOptions:
+def build_translaas_options(config: dict[str, Any]) -> TranslaasOptions:
     """Build ``TranslaasOptions`` from a normalized flat configuration dict."""
     if "api_key" not in config or "base_url" not in config:
         raise ValueError("api_key and base_url are required in config dictionary")
@@ -97,14 +97,14 @@ def build_translaas_options(config: Dict[str, Any]) -> TranslaasOptions:
     )
 
 
-def from_dict(config: Dict[str, Any]) -> TranslaasOptions:
+def from_dict(config: dict[str, Any]) -> TranslaasOptions:
     """Create ``TranslaasOptions`` from a dictionary."""
     return build_translaas_options(config)
 
 
 def from_env(prefix: str = "TRANSLAAS_") -> TranslaasOptions:
     """Create ``TranslaasOptions`` from environment variables."""
-    config: Dict[str, Any] = {}
+    config: dict[str, Any] = {}
 
     api_key = os.getenv(f"{prefix}API_KEY")
     base_url = os.getenv(f"{prefix}BASE_URL")
@@ -184,8 +184,8 @@ _COMMON_KEY_MAPPING = {
 }
 
 
-def _config_from_mapped_source(source: Any, mapping: Dict[str, str]) -> Dict[str, Any]:
-    config: Dict[str, Any] = {}
+def _config_from_mapped_source(source: Any, mapping: dict[str, str]) -> dict[str, Any]:
+    config: dict[str, Any] = {}
     for source_key, config_key in mapping.items():
         if hasattr(source, source_key):
             value = getattr(source, source_key)
@@ -198,7 +198,7 @@ def _config_from_mapped_source(source: Any, mapping: Dict[str, str]) -> Dict[str
     return config
 
 
-def flask_config(app_config: Dict[str, Any]) -> TranslaasOptions:
+def flask_config(app_config: dict[str, Any]) -> TranslaasOptions:
     """Create ``TranslaasOptions`` from Flask ``app.config``."""
     return build_translaas_options(_config_from_mapped_source(app_config, _COMMON_KEY_MAPPING))
 

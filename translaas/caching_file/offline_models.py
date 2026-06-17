@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from translaas.models.responses import ProjectLocales, TranslationProject
 
@@ -25,7 +25,7 @@ MANIFEST_VERSION = "1.0"
 class ProjectCacheInfo:
     """Per-project entry in ``manifest.json``."""
 
-    languages: List[str] = field(default_factory=list)
+    languages: list[str] = field(default_factory=list)
     last_sync_at: Optional[str] = None
     status: CacheSyncStatus = CacheSyncStatus.SYNCED
 
@@ -38,9 +38,9 @@ class CacheManifest:
     sdk_version: str = ""
     created_at: str = ""
     last_sync_at: Optional[str] = None
-    projects: Dict[str, ProjectCacheInfo] = field(default_factory=dict)
+    projects: dict[str, ProjectCacheInfo] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "version": self.version,
             "sdkVersion": self.sdk_version,
@@ -57,9 +57,9 @@ class CacheManifest:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "CacheManifest":
+    def from_dict(cls, data: dict[str, Any]) -> CacheManifest:
         projects_raw = data.get("projects") or {}
-        projects: Dict[str, ProjectCacheInfo] = {}
+        projects: dict[str, ProjectCacheInfo] = {}
         for project_id, info in projects_raw.items():
             if not isinstance(info, dict):
                 continue
@@ -90,8 +90,8 @@ class CachedProject:
     data: TranslationProject
     expires_at: Optional[str] = None
 
-    def to_dict(self) -> Dict[str, Any]:
-        payload: Dict[str, Any] = {
+    def to_dict(self) -> dict[str, Any]:
+        payload: dict[str, Any] = {
             "cachedAt": self.cached_at,
             "expiresAt": self.expires_at,
             "data": _project_to_storage_dict(self.data),
@@ -99,7 +99,7 @@ class CachedProject:
         return payload
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> Optional["CachedProject"]:
+    def from_dict(cls, data: dict[str, Any]) -> Optional[CachedProject]:
         if not isinstance(data, dict):
             return None
         inner = data.get("data")
@@ -120,7 +120,7 @@ class CachedLocales:
     data: ProjectLocales
     expires_at: Optional[str] = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "cachedAt": self.cached_at,
             "expiresAt": self.expires_at,
@@ -132,7 +132,7 @@ class CachedLocales:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> Optional["CachedLocales"]:
+    def from_dict(cls, data: dict[str, Any]) -> Optional[CachedLocales]:
         if not isinstance(data, dict):
             return None
         inner = data.get("data")
@@ -155,14 +155,14 @@ def _iso_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def _project_to_storage_dict(project: TranslationProject) -> Dict[str, Any]:
-    result: Dict[str, Any] = dict(project.groups)
+def _project_to_storage_dict(project: TranslationProject) -> dict[str, Any]:
+    result: dict[str, Any] = dict(project.groups)
     if project.group_entry_context:
         result["entryContext"] = project.group_entry_context
     return result
 
 
-def _project_from_storage_dict(data: Dict[str, Any]) -> TranslationProject:
+def _project_from_storage_dict(data: dict[str, Any]) -> TranslationProject:
     groups = dict(data)
     entry_context = groups.pop("entryContext", None)
     return TranslationProject(groups=groups, group_entry_context=entry_context)

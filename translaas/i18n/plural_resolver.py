@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Dict, Optional
+from typing import Optional
 
 from translaas.models.enums import PluralCategory
 
@@ -15,7 +15,7 @@ class _PluralPattern(str, Enum):
     ARABIC = "arabic"
 
 
-_LANGUAGE_PATTERNS: Dict[str, _PluralPattern] = {
+_LANGUAGE_PATTERNS: dict[str, _PluralPattern] = {
     "en": _PluralPattern.ENGLISH_LIKE,
     "de": _PluralPattern.ENGLISH_LIKE,
     "nl": _PluralPattern.ENGLISH_LIKE,

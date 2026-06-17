@@ -1,6 +1,8 @@
 """Translaas Python SDK - A strongly-typed SDK for the Translaas Translation Delivery API."""
 
 from translaas.__version__ import __version__
+from translaas.caching import CacheKeyBuilder
+from translaas.caching_file import CachingTranslaasClient, create_translaas_client
 from translaas.client import TranslaasClient
 from translaas.exceptions import (
     TranslaasApiException,
@@ -23,8 +25,6 @@ from translaas.models import (
     TranslaasRequestContext,
     ValidateApiKeyResult,
 )
-from translaas.caching import CacheKeyBuilder
-from translaas.caching_file import CachingTranslaasClient, create_translaas_client
 from translaas.offline import OfflineBundle, OfflineCacheSyncService, parse_offline_zip
 from translaas.service import TranslaasService
 

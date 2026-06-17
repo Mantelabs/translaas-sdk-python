@@ -6,13 +6,13 @@ import io
 import json
 import zipfile
 from dataclasses import dataclass, field
-from typing import Dict, Optional
+from typing import Optional
 
 from translaas.caching_file.file_cache import sanitize_project_id
 from translaas.caching_file.offline_models import (
+    MANIFEST_VERSION,
     CachedLocales,
     CachedProject,
-    MANIFEST_VERSION,
 )
 from translaas.models.responses import ProjectLocales, TranslationProject
 
@@ -21,9 +21,9 @@ from translaas.models.responses import ProjectLocales, TranslationProject
 class OfflineBundle:
     """Parsed offline ZIP contents."""
 
-    manifest: Dict[str, object]
-    locales_by_project: Dict[str, ProjectLocales] = field(default_factory=dict)
-    projects_by_project_lang: Dict[str, Dict[str, TranslationProject]] = field(
+    manifest: dict[str, object]
+    locales_by_project: dict[str, ProjectLocales] = field(default_factory=dict)
+    projects_by_project_lang: dict[str, dict[str, TranslationProject]] = field(
         default_factory=dict
     )
 
@@ -33,9 +33,9 @@ def parse_offline_zip(content: bytes) -> OfflineBundle:
     if not content:
         raise ValueError("ZIP content is empty")
 
-    manifest: Dict[str, object] = {}
-    locales_by_project: Dict[str, ProjectLocales] = {}
-    projects: Dict[str, Dict[str, TranslationProject]] = {}
+    manifest: dict[str, object] = {}
+    locales_by_project: dict[str, ProjectLocales] = {}
+    projects: dict[str, dict[str, TranslationProject]] = {}
 
     with zipfile.ZipFile(io.BytesIO(content), "r") as archive:
         for name in archive.namelist():
@@ -90,14 +90,14 @@ def resolve_project_key(bundle: OfflineBundle, project: str) -> str:
     return sanitized
 
 
-def _validate_manifest(manifest: Dict[str, object]) -> None:
+def _validate_manifest(manifest: dict[str, object]) -> None:
     version = manifest.get("version")
     if version is not None and str(version) != MANIFEST_VERSION:
         # Forward-compatible: accept unknown versions but keep default constant documented.
         pass
 
 
-def _load_json_dict(raw: bytes) -> Dict[str, object]:
+def _load_json_dict(raw: bytes) -> dict[str, object]:
     data = json.loads(raw.decode("utf-8"))
     if not isinstance(data, dict):
         raise ValueError("Expected JSON object in ZIP entry")

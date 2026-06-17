@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from typing import Dict, Mapping, Optional, Union
+from typing import Mapping, Optional, Union
 
 
 class ParameterReplacer:
@@ -43,8 +43,8 @@ class ParameterReplacer:
     def _merge_number(
         number: Optional[float],
         parameters: Optional[Mapping[str, Union[str, int, float, None]]],
-    ) -> Dict[str, str]:
-        merged: Dict[str, str] = {}
+    ) -> dict[str, str]:
+        merged: dict[str, str] = {}
         if parameters:
             for key, value in parameters.items():
                 merged[key] = ParameterReplacer._to_string(value)

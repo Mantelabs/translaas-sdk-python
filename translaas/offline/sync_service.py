@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from typing import List, Optional
+from typing import Optional
 
 from translaas.caching_file.file_cache import FileCacheProvider
 from translaas.caching_file.offline_protocol import IOfflineCacheProvider
@@ -125,6 +125,6 @@ class OfflineCacheSyncService:
                 continue
 
 
-def _filter_languages(available: List[str], configured: List[str]) -> List[str]:
+def _filter_languages(available: list[str], configured: list[str]) -> list[str]:
     configured_set = {lang.lower() for lang in configured}
     return [lang for lang in available if lang.lower() in configured_set]
