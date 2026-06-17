@@ -1,10 +1,34 @@
 """Tests for the memory cache provider."""
 
-import time
+from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
+from typing import Callable, Iterator, Optional
+from unittest.mock import patch
 
 from translaas.caching.memory import CacheEntry, MemoryCacheProvider
 from translaas.models.protocols import ITranslaasCacheProvider
+
+_BASE_TIME = datetime(2026, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+
+
+@contextmanager
+def freeze_memory_cache_time(
+    start: datetime = _BASE_TIME,
+) -> Iterator[Callable[..., None]]:
+    """Patch memory cache datetime.now with an advanceable frozen clock."""
+
+    current = [start]
+
+    def now(tz: Optional[timezone] = None) -> datetime:
+        return current[0]
+
+    def advance(*, milliseconds: int = 0, seconds: float = 0) -> None:
+        current[0] = current[0] + timedelta(milliseconds=milliseconds, seconds=seconds)
+
+    with patch("translaas.caching.memory.datetime") as mock_dt:
+        mock_dt.now.side_effect = now
+        mock_dt.side_effect = lambda *args, **kwargs: datetime(*args, **kwargs)
+        yield advance
 
 
 class TestCacheEntry:
@@ -39,10 +63,11 @@ class TestCacheEntry:
 
     def test_cache_entry_expired_sliding(self) -> None:
         """Test cache entry expired by sliding expiration."""
-        entry = CacheEntry("test_value", sliding_expiration_ms=100)
-        # Wait for expiration
-        time.sleep(0.15)
-        assert entry.is_expired()
+        with freeze_memory_cache_time() as advance:
+            entry = CacheEntry("test_value", sliding_expiration_ms=100)
+            assert not entry.is_expired()
+            advance(milliseconds=100)
+            assert entry.is_expired()
 
     def test_cache_entry_not_expired_sliding(self) -> None:
         """Test cache entry not expired with sliding expiration."""
@@ -54,11 +79,12 @@ class TestCacheEntry:
 
     def test_update_access_time(self) -> None:
         """Test updating access time."""
-        entry = CacheEntry("test_value", sliding_expiration_ms=1000)
-        old_access = entry.last_access
-        time.sleep(0.01)
-        entry.update_access_time()
-        assert entry.last_access > old_access
+        with freeze_memory_cache_time() as advance:
+            entry = CacheEntry("test_value", sliding_expiration_ms=1000)
+            old_access = entry.last_access
+            advance(milliseconds=10)
+            entry.update_access_time()
+            assert entry.last_access > old_access
 
 
 class TestMemoryCacheProvider:
@@ -129,42 +155,45 @@ class TestMemoryCacheProvider:
 
     def test_absolute_expiration(self) -> None:
         """Test absolute expiration."""
-        cache = MemoryCacheProvider()
-        cache.set("key1", "value1", absolute_expiration_ms=100)
-        assert cache.get("key1") == "value1"
-        # Wait for expiration
-        time.sleep(0.15)
-        assert cache.get("key1") is None
+        with freeze_memory_cache_time() as advance:
+            cache = MemoryCacheProvider()
+            cache.set("key1", "value1", absolute_expiration_ms=100)
+            assert cache.get("key1") == "value1"
+            advance(milliseconds=100)
+            assert cache.get("key1") is None
 
     def test_sliding_expiration(self) -> None:
         """Test sliding expiration."""
-        cache = MemoryCacheProvider()
-        cache.set("key1", "value1", sliding_expiration_ms=200)
-        assert cache.get("key1") == "value1"
-        # Access before expiration extends the expiration
-        time.sleep(0.1)
-        assert cache.get("key1") == "value1"
-        # Wait for expiration after last access (200ms = 0.2s)
-        time.sleep(0.25)
-        assert cache.get("key1") is None
+        with freeze_memory_cache_time() as advance:
+            cache = MemoryCacheProvider()
+            cache.set("key1", "value1", sliding_expiration_ms=200)
+            assert cache.get("key1") == "value1"
+            # Access before expiration extends the expiration
+            advance(milliseconds=100)
+            assert cache.get("key1") == "value1"
+            # Wait for expiration after last access (200ms)
+            advance(milliseconds=250)
+            assert cache.get("key1") is None
 
     def test_sliding_expiration_no_access(self) -> None:
         """Test sliding expiration without access."""
-        cache = MemoryCacheProvider()
-        cache.set("key1", "value1", sliding_expiration_ms=100)
-        # Don't access, wait for expiration
-        time.sleep(0.15)
-        assert cache.get("key1") is None
+        with freeze_memory_cache_time() as advance:
+            cache = MemoryCacheProvider()
+            cache.set("key1", "value1", sliding_expiration_ms=100)
+            # Don't access, wait for expiration
+            advance(milliseconds=150)
+            assert cache.get("key1") is None
 
     def test_both_expiration_types(self) -> None:
         """Test both absolute and sliding expiration."""
-        cache = MemoryCacheProvider()
-        # Set with both expiration types - absolute should take precedence
-        cache.set("key1", "value1", absolute_expiration_ms=100, sliding_expiration_ms=1000)
-        assert cache.get("key1") == "value1"
-        # Wait for absolute expiration
-        time.sleep(0.15)
-        assert cache.get("key1") is None
+        with freeze_memory_cache_time() as advance:
+            cache = MemoryCacheProvider()
+            # Set with both expiration types - absolute should take precedence
+            cache.set("key1", "value1", absolute_expiration_ms=100, sliding_expiration_ms=1000)
+            assert cache.get("key1") == "value1"
+            # Wait for absolute expiration
+            advance(milliseconds=150)
+            assert cache.get("key1") is None
 
     def test_statistics_enabled(self) -> None:
         """Test cache statistics when enabled."""
@@ -195,17 +224,17 @@ class TestMemoryCacheProvider:
 
     def test_statistics_expired_entry(self) -> None:
         """Test statistics with expired entries."""
-        cache = MemoryCacheProvider(enable_statistics=True)
-        cache.set("key1", "value1", absolute_expiration_ms=10)
-        cache.get("key1")  # Hit
-        assert cache.hits == 1
-        assert cache.misses == 0
+        with freeze_memory_cache_time() as advance:
+            cache = MemoryCacheProvider(enable_statistics=True)
+            cache.set("key1", "value1", absolute_expiration_ms=10)
+            cache.get("key1")  # Hit
+            assert cache.hits == 1
+            assert cache.misses == 0
 
-        # Wait for expiration
-        time.sleep(0.02)
-        cache.get("key1")  # Miss (expired)
-        assert cache.hits == 1
-        assert cache.misses == 1
+            advance(milliseconds=20)
+            cache.get("key1")  # Miss (expired)
+            assert cache.hits == 1
+            assert cache.misses == 1
 
     def test_get_statistics(self) -> None:
         """Test getting cache statistics."""
@@ -268,19 +297,19 @@ class TestMemoryCacheProvider:
 
     def test_cleanup_expired(self) -> None:
         """Test cleanup of expired entries."""
-        cache = MemoryCacheProvider()
-        cache.set("key1", "value1", absolute_expiration_ms=10)
-        cache.set("key2", "value2", absolute_expiration_ms=1000)
-        cache.set("key3", "value3", absolute_expiration_ms=10)
+        with freeze_memory_cache_time() as advance:
+            cache = MemoryCacheProvider()
+            cache.set("key1", "value1", absolute_expiration_ms=10)
+            cache.set("key2", "value2", absolute_expiration_ms=1000)
+            cache.set("key3", "value3", absolute_expiration_ms=10)
 
-        # Wait for some entries to expire
-        time.sleep(0.02)
+            advance(milliseconds=20)
 
-        removed = cache.cleanup_expired()
-        assert removed == 2
-        assert cache.get("key1") is None
-        assert cache.get("key2") == "value2"
-        assert cache.get("key3") is None
+            removed = cache.cleanup_expired()
+            assert removed == 2
+            assert cache.get("key1") is None
+            assert cache.get("key2") == "value2"
+            assert cache.get("key3") is None
 
     def test_cleanup_expired_none(self) -> None:
         """Test cleanup when no entries are expired."""
@@ -319,31 +348,34 @@ class TestMemoryCacheProvider:
 
     def test_expiration_removes_from_cache(self) -> None:
         """Test that expired entries are removed from cache."""
-        cache = MemoryCacheProvider()
-        cache.set("key1", "value1", absolute_expiration_ms=10)
-        assert "key1" in cache._cache
+        with freeze_memory_cache_time() as advance:
+            cache = MemoryCacheProvider()
+            cache.set("key1", "value1", absolute_expiration_ms=10)
+            assert "key1" in cache._cache
 
-        time.sleep(0.02)
-        cache.get("key1")  # This should remove expired entry
-        assert "key1" not in cache._cache
+            advance(milliseconds=20)
+            cache.get("key1")  # This should remove expired entry
+            assert "key1" not in cache._cache
 
     def test_sliding_expiration_updates_on_access(self) -> None:
         """Test that sliding expiration updates on access."""
-        cache = MemoryCacheProvider()
-        cache.set("key1", "value1", sliding_expiration_ms=200)
-        entry1 = cache._cache["key1"]
-        first_access = entry1.last_access
+        with freeze_memory_cache_time() as advance:
+            cache = MemoryCacheProvider()
+            cache.set("key1", "value1", sliding_expiration_ms=200)
+            entry1 = cache._cache["key1"]
+            first_access = entry1.last_access
 
-        time.sleep(0.1)
-        cache.get("key1")  # Access should update last_access
-        entry2 = cache._cache["key1"]
-        assert entry2.last_access > first_access
+            advance(milliseconds=100)
+            cache.get("key1")  # Access should update last_access
+            entry2 = cache._cache["key1"]
+            assert entry2.last_access > first_access
 
     def test_no_expiration(self) -> None:
         """Test entries without expiration."""
-        cache = MemoryCacheProvider()
-        cache.set("key1", "value1")
-        # Entry should never expire
-        assert cache.get("key1") == "value1"
-        time.sleep(0.1)
-        assert cache.get("key1") == "value1"
+        with freeze_memory_cache_time() as advance:
+            cache = MemoryCacheProvider()
+            cache.set("key1", "value1")
+            # Entry should never expire
+            assert cache.get("key1") == "value1"
+            advance(milliseconds=100)
+            assert cache.get("key1") == "value1"
