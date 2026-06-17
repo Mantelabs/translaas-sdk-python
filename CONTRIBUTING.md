@@ -245,7 +245,7 @@ Red → Green → Refactor
    ```
 9. **Run linting** to ensure code style is correct:
    ```bash
-   ruff check .
+   ruff check translaas/
    ```
 10. **Format code** to ensure consistent formatting:
     ```bash
@@ -414,10 +414,32 @@ pytest-watch
 mypy translaas/
 
 # Run linting
-ruff check .
+ruff check translaas/
 
 # Format code
 black translaas/ tests/
+```
+
+## Continuous Integration
+
+GitHub Actions runs a single **CI** workflow (`.github/workflows/ci.yml`). Pull requests and pushes that touch SDK code, tests, or `pyproject.toml` trigger it. Superseded runs on the same branch or PR are cancelled automatically.
+
+| When | Jobs |
+|------|------|
+| **Pull request** to `main` or `develop` | Lint (`ruff`), typecheck (`mypy`), one-off build, unit tests on **Ubuntu + Python 3.12**, Codecov upload |
+| **Push** to `main` or `develop` | Same checks plus unit tests on **Python 3.8–3.12** (Ubuntu matrix) |
+| **Push** to `main` only | Additional **Windows** and **macOS** smoke tests (Python 3.10, `pytest` only) |
+
+Releases use a separate **Release** workflow (`.github/workflows/release.yml`) on Ubuntu; it is not part of the PR gate.
+
+To match CI locally before opening a PR:
+
+```bash
+pip install -e ".[dev]"
+ruff check translaas/
+mypy translaas/ --ignore-missing-imports --no-strict-optional
+python -m build
+pytest
 ```
 
 ## Building and Packaging
