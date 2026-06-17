@@ -61,10 +61,10 @@ jobs:
           pip install -e ".[dev]"
 
       - name: Run linting
-        run: ruff check translaas/
+        run: python -m ruff check translaas/
 
       - name: Run type checking
-        run: mypy translaas/ --ignore-missing-imports --no-strict-optional
+        run: python -m mypy translaas/ --ignore-missing-imports --no-strict-optional
 
   build:
     name: Build package
