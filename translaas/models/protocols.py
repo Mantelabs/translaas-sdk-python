@@ -6,6 +6,7 @@ These use structural typing (duck typing) rather than inheritance.
 
 from typing import Dict, List, Optional, Protocol, overload
 
+from translaas.models.request_context import TranslaasRequestContext
 from translaas.models.responses import (
     OfflineCacheDownloadResult,
     ProjectLocales,
@@ -33,6 +34,7 @@ class ITranslaasClient(Protocol):
         project: Optional[str] = None,
         channel: Optional[str] = None,
         snapshot_version: Optional[str] = None,
+        request_context: Optional[TranslaasRequestContext] = None,
     ) -> str:
         """Get a single translation entry."""
         ...
@@ -47,6 +49,7 @@ class ITranslaasClient(Protocol):
         include_context: Optional[bool] = None,
         channel: Optional[str] = None,
         snapshot_version: Optional[str] = None,
+        request_context: Optional[TranslaasRequestContext] = None,
     ) -> TranslationGroup:
         """Get a translation group."""
         ...
@@ -60,6 +63,7 @@ class ITranslaasClient(Protocol):
         include_context: Optional[bool] = None,
         channel: Optional[str] = None,
         snapshot_version: Optional[str] = None,
+        request_context: Optional[TranslaasRequestContext] = None,
     ) -> TranslationProject:
         """Get an entire translation project."""
         ...
@@ -70,6 +74,7 @@ class ITranslaasClient(Protocol):
         *,
         channel: Optional[str] = None,
         snapshot_version: Optional[str] = None,
+        request_context: Optional[TranslaasRequestContext] = None,
     ) -> ProjectLocales:
         """Get the list of available locales for a project."""
         ...
@@ -85,6 +90,7 @@ class ITranslaasClient(Protocol):
         include_context: Optional[bool] = None,
         channel: Optional[str] = None,
         snapshot_version: Optional[str] = None,
+        request_context: Optional[TranslaasRequestContext] = None,
     ) -> OfflineCacheDownloadResult:
         """Download offline translation ZIP bundle."""
         ...

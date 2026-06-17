@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import httpx
 
@@ -85,13 +85,18 @@ class CachingTranslaasClient(ITranslaasClient):
         self._options = options
         self._project_id = project_id
 
-    async def __aenter__(self) -> "CachingTranslaasClient":
+    async def __aenter__(self) -> CachingTranslaasClient:
         enter = getattr(self._inner, "__aenter__", None)
         if enter is not None:
             await enter()
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+    async def __aexit__(
+        self,
+        exc_type: Optional[type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[Any],
+    ) -> None:
         exit_fn = getattr(self._inner, "__aexit__", None)
         if exit_fn is not None:
             await exit_fn(exc_type, exc_val, exc_tb)
@@ -102,7 +107,7 @@ class CachingTranslaasClient(ITranslaasClient):
         entry: str,
         lang: str,
         number: Optional[float] = None,
-        parameters: Optional[Dict[str, str]] = None,
+        parameters: Optional[dict[str, str]] = None,
         *,
         project: Optional[str] = None,
         channel: Optional[str] = None,
@@ -280,7 +285,7 @@ class CachingTranslaasClient(ITranslaasClient):
         entry: str,
         lang: str,
         number: Optional[float],
-        parameters: Optional[Dict[str, str]],
+        parameters: Optional[dict[str, str]],
         request_context: Optional[TranslaasRequestContext] = None,
     ) -> str:
         cached_group = self._cache.get_group(self._project_id, group, lang)
@@ -313,7 +318,7 @@ class CachingTranslaasClient(ITranslaasClient):
         entry: str,
         lang: str,
         number: Optional[float],
-        parameters: Optional[Dict[str, str]],
+        parameters: Optional[dict[str, str]],
         request_context: Optional[TranslaasRequestContext] = None,
     ) -> str:
         try:
@@ -348,7 +353,7 @@ class CachingTranslaasClient(ITranslaasClient):
         entry: str,
         lang: str,
         number: Optional[float],
-        parameters: Optional[Dict[str, str]],
+        parameters: Optional[dict[str, str]],
     ) -> str:
         cached_group = self._cache.get_group(self._project_id, group, lang)
         resolved = self._resolve_entry_from_group(cached_group, entry, lang, number, parameters)
@@ -362,7 +367,7 @@ class CachingTranslaasClient(ITranslaasClient):
         entry: str,
         lang: str,
         number: Optional[float],
-        parameters: Optional[Dict[str, str]],
+        parameters: Optional[dict[str, str]],
     ) -> Optional[str]:
         if group is None:
             return None
@@ -541,7 +546,7 @@ class CachingTranslaasClient(ITranslaasClient):
             return result
         except Exception as ex:
             if _is_network_or_api_error(ex):
-                raise _offline_cache_miss(project, lang="*") from ex
+                raise _offline_cache_miss(project, language="*") from ex
             raise
 
     async def _get_locales_api_first(
@@ -566,13 +571,13 @@ class CachingTranslaasClient(ITranslaasClient):
             cached = self._cache.get_project_locales(project)
             if cached is not None:
                 return cached
-            raise _offline_cache_miss(project, lang="*") from ex
+            raise _offline_cache_miss(project, language="*") from ex
 
     async def _get_locales_cache_only(self, project: str) -> ProjectLocales:
         cached = self._cache.get_project_locales(project)
         if cached is not None:
             return cached
-        raise _offline_cache_miss(project, lang="*")
+        raise _offline_cache_miss(project, language="*")
 
     # --- Cache writers ---
 
