@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional
+from typing import Optional
 
 
 class CacheKeyBuilder:
@@ -16,7 +16,7 @@ class CacheKeyBuilder:
         entry: str,
         lang: str,
         number: Optional[float] = None,
-        parameters: Optional[Dict[str, str]] = None,
+        parameters: Optional[dict[str, str]] = None,
         *,
         project: Optional[str] = None,
         channel: Optional[str] = None,
@@ -29,7 +29,7 @@ class CacheKeyBuilder:
         if lang is None:
             raise TypeError("lang is required")
 
-        parts: List[str] = ["entry", group, entry, lang]
+        parts: list[str] = ["entry", group, entry, lang]
         if number is not None:
             parts.append(format(number, ".15g"))
         if parameters:
@@ -59,7 +59,7 @@ class CacheKeyBuilder:
         if lang is None:
             raise TypeError("lang is required")
 
-        parts: List[str] = ["group", project, group, lang]
+        parts: list[str] = ["group", project, group, lang]
         if format and format.strip():
             parts.append(format)
         return CacheKeyBuilder._append_snapshot_suffix(
@@ -81,7 +81,7 @@ class CacheKeyBuilder:
         if lang is None:
             raise TypeError("lang is required")
 
-        parts: List[str] = ["project", project, lang]
+        parts: list[str] = ["project", project, lang]
         if format and format.strip():
             parts.append(format)
         return CacheKeyBuilder._append_snapshot_suffix(
@@ -97,7 +97,7 @@ class CacheKeyBuilder:
     ) -> str:
         if project is None:
             raise TypeError("project is required")
-        parts: List[str] = ["locales", project]
+        parts: list[str] = ["locales", project]
         return CacheKeyBuilder._append_snapshot_suffix(
             parts, project=None, channel=channel, version=version, include_context=None
         )
@@ -112,14 +112,14 @@ class CacheKeyBuilder:
     ) -> str:
         if project is None:
             raise TypeError("project is required")
-        parts: List[str] = ["offline", project]
+        parts: list[str] = ["offline", project]
         return CacheKeyBuilder._append_snapshot_suffix(
             parts, project=None, channel=channel, version=version, include_context=include_context
         )
 
     @staticmethod
     def _append_snapshot_suffix(
-        parts: List[str],
+        parts: list[str],
         *,
         project: Optional[str],
         channel: Optional[str],
@@ -127,7 +127,7 @@ class CacheKeyBuilder:
         include_context: Optional[bool],
     ) -> str:
         key = CacheKeyBuilder._SEP.join(parts)
-        suffix_parts: List[str] = []
+        suffix_parts: list[str] = []
         if project and project.strip():
             suffix_parts.append(f"proj={project}")
         if channel and channel.strip():

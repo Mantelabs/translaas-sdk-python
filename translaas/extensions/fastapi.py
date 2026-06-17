@@ -4,13 +4,12 @@ This module provides FastAPI-specific integrations including dependency injectio
 helper methods, and request language providers for using Translaas in FastAPI applications.
 """
 
-from typing import TYPE_CHECKING, AsyncGenerator, Optional
+from typing import TYPE_CHECKING, Any, AsyncGenerator, Optional
 
 try:
     from fastapi import Request
 except ImportError:
-    # FastAPI is an optional dependency - only raise error when actually used
-    Request = None
+    Request = Any  # type: ignore[misc,assignment]
 
 from translaas.language.providers import RequestLanguageProvider
 from translaas.language.resolver import LanguageResolver

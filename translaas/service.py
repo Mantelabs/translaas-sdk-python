@@ -9,7 +9,6 @@ import re
 from typing import Dict, List, Optional, Tuple, Union, overload
 
 from translaas.caching_file.client_factory import create_translaas_client
-from translaas.client.client import TranslaasClient
 from translaas.client.text_query import merge_number_into_parameters
 from translaas.exceptions import (
     TranslaasConfigurationException,
@@ -17,12 +16,12 @@ from translaas.exceptions import (
 )
 from translaas.language.resolver import LanguageResolver
 from translaas.models.options import TranslaasOptions
+from translaas.models.protocols import ITranslaasCacheProvider, ITranslaasClient, ITranslaasService
 from translaas.models.request_context import (
     SdkTranslationQueryParams,
     TranslaasRequestContext,
     merge_request_context,
 )
-from translaas.models.protocols import ITranslaasCacheProvider, ITranslaasClient, ITranslaasService
 from translaas.models.responses import (
     OfflineCacheDownloadResult,
     ProjectLocales,

@@ -2,18 +2,18 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Optional
 
 
 def merge_number_into_parameters(
     number: Optional[float],
-    parameters: Optional[Dict[str, str]],
-) -> Optional[Dict[str, str]]:
+    parameters: Optional[dict[str, str]],
+) -> Optional[dict[str, str]]:
     """Inject ``N`` (invariant formatting) when ``number`` is set and ``N`` not present."""
     if number is None and not parameters:
         return None
 
-    merged: Dict[str, str] = {}
+    merged: dict[str, str] = {}
     if parameters:
         for k, v in parameters.items():
             if k is not None and v is not None:
@@ -32,12 +32,12 @@ def build_text_query_params(
     lang: str,
     project: Optional[str] = None,
     number: Optional[float] = None,
-    parameters: Optional[Dict[str, str]] = None,
-    extra_query: Optional[Dict[str, str]] = None,
-) -> Dict[str, str]:
+    parameters: Optional[dict[str, str]] = None,
+    extra_query: Optional[dict[str, str]] = None,
+) -> dict[str, str]:
     """Build query dict for the text endpoint."""
     merged_params = merge_number_into_parameters(number, parameters)
-    req: Dict[str, str] = {
+    req: dict[str, str] = {
         "group": group,
         "entry": entry,
         "lang": lang,

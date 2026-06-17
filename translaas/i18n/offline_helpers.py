@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from typing import Dict, Mapping, Optional, Union
+from typing import Mapping, Optional, Union
 
 from translaas.models.enums import PluralCategory
 
@@ -36,7 +36,7 @@ def substitute_parameters(
     number: Optional[float] = None,
 ) -> str:
     """Mirror .NET offline ``SubstituteParameters`` (``{name}`` placeholders only)."""
-    merged: Dict[str, str] = {}
+    merged: dict[str, str] = {}
     if parameters:
         for key, value in parameters.items():
             merged[key] = _to_string(value)

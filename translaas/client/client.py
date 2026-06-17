@@ -6,7 +6,7 @@ import asyncio
 import json
 from datetime import timedelta
 from email.utils import decode_rfc2231
-from typing import Any, Dict, Optional
+from typing import Optional, cast
 
 import httpx
 
@@ -50,7 +50,7 @@ _PATH_VALIDATE_KEY = "api/v1/api-keys/validate"
 
 
 def _response_etag(response: httpx.Response) -> Optional[str]:
-    return response.headers.get("etag") or response.headers.get("ETag")
+    return cast(Optional[str], response.headers.get("etag") or response.headers.get("ETag"))
 
 
 def _parse_suggested_filename(response: httpx.Response) -> Optional[str]:
@@ -64,16 +64,16 @@ def _parse_suggested_filename(response: httpx.Response) -> Optional[str]:
             if part.lower().startswith("filename*="):
                 value = part.split("=", 1)[1].strip().strip('"')
                 if value.lower().startswith("utf-8''"):
-                    return value[7:]
+                    return cast(str, value[7:])
                 decoded = decode_rfc2231(value)
                 if decoded and decoded[2]:
                     return decoded[2]
-                return value
+                return cast(str, value)
     if "filename=" in lower:
         for part in cd.split(";"):
             part = part.strip()
             if part.lower().startswith("filename="):
-                return part.split("=", 1)[1].strip().strip('"')
+                return cast(str, part.split("=", 1)[1].strip().strip('"'))
     return None
 
 

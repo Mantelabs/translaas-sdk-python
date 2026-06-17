@@ -136,7 +136,7 @@ class Translaas:
         self.service: Optional[TranslaasService] = None
 
         # Register template filter
-        @app.template_filter("translaas")  # type: ignore[misc]
+        @app.template_filter("translaas")
         def translaas_filter(group: str, entry: str, **kwargs: str) -> str:
             """Template filter for translations.
 

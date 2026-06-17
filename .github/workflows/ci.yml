@@ -2,34 +2,103 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - develop
+    paths: &ci-paths
+      - '.github/workflows/ci.yml'
+      - 'translaas/**/*.py'
+      - 'tests/**/*.py'
+      - 'pyproject.toml'
+      - 'setup.py'
+      - 'requirements*.txt'
   pull_request:
-    branches: [main]
+    branches:
+      - main
+      - develop
+    paths: *ci-paths
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
-  build-and-test:
-    name: Build and Test (Python ${{ matrix.python-version }} - ${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
+  configure:
+    name: Configure matrix
+    runs-on: ubuntu-latest
+    outputs:
+      python-versions: ${{ steps.set-matrix.outputs.python-versions }}
+    steps:
+      - id: set-matrix
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo 'python-versions=["3.12"]' >> "$GITHUB_OUTPUT"
+          else
+            echo 'python-versions=["3.8","3.9","3.10","3.11","3.12"]' >> "$GITHUB_OUTPUT"
+          fi
 
+  lint-and-typecheck:
+    name: Lint and typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Run linting
+        run: python -m ruff check translaas/
+
+      - name: Run type checking
+        run: python -m mypy translaas/ --ignore-missing-imports --no-strict-optional
+
+  build:
+    name: Build package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Build package
+        run: python -m build
+
+  test:
+    name: Test (Python ${{ matrix.python-version }})
+    needs:
+      - configure
+      - lint-and-typecheck
+      - build
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - os: ubuntu-latest
-            python-version: '3.8'
-          - os: ubuntu-latest
-            python-version: '3.9'
-          - os: ubuntu-latest
-            python-version: '3.10'
-          - os: ubuntu-latest
-            python-version: '3.11'
-          - os: ubuntu-latest
-            python-version: '3.12'
-          - os: windows-latest
-            python-version: '3.10'
-          - os: macos-latest
-            python-version: '3.10'
-
+        python-version: ${{ fromJSON(needs.configure.outputs.python-versions) }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -38,54 +107,53 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
-          # cache: 'pip' - Will be enabled once pyproject.toml is created
+          cache: pip
+          cache-dependency-path: pyproject.toml
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          # Skip installation until pyproject.toml is created
-          # pip install -e ".[dev]"
-        continue-on-error: true
-
-      - name: Run linting
-        run: |
-          # Skip linting until pyproject.toml and source code are created
-          echo "Skipping linting - pyproject.toml not yet created"
-        continue-on-error: true
-
-      - name: Run type checking
-        run: |
-          # Skip type checking until source code is created
-          echo "Skipping type checking - source code not yet created"
-        continue-on-error: true
-
-      - name: Build
-        run: |
-          # Skip build until pyproject.toml is created
-          echo "Skipping build - pyproject.toml not yet created"
-        continue-on-error: true
+          pip install -e ".[dev]"
 
       - name: Run tests
-        run: |
-          # Skip tests until source code and tests are created
-          echo "Skipping tests - source code not yet created"
-        continue-on-error: true
+        run: pytest
 
-      - name: Upload test results
-        uses: actions/upload-artifact@v7
-        if: always()
-        with:
-          name: test-results-${{ matrix.os }}-python-${{ matrix.python-version }}
-          path: |
-            coverage.xml
-            .coverage
-          retention-days: 30
-
-      - name: Upload coverage reports
+      - name: Upload coverage
+        if: matrix.python-version == '3.12'
         uses: codecov/codecov-action@v6
-        if: always()
         with:
           files: ./coverage.xml
-          flags: unittests
-          name: codecov-umbrella
-          fail_ci_if_error: false
+          flags: unit
+          name: unit-tests
+
+  cross-platform-smoke:
+    name: Smoke (${{ matrix.os }}, Python 3.10)
+    needs:
+      - lint-and-typecheck
+      - build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - windows-latest
+          - macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.10'
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Run tests
+        run: pytest

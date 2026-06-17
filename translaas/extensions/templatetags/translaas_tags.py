@@ -11,6 +11,8 @@ Example:
     ```
 """
 
+from typing import Optional
+
 from django import template
 
 from translaas.extensions.django import t
@@ -18,13 +20,13 @@ from translaas.extensions.django import t
 register = template.Library()
 
 
-@register.simple_tag(takes_context=True)  # type: ignore[misc]
+@register.simple_tag(takes_context=True)  # type: ignore[untyped-decorator]
 def translaas(
     context: dict,
     group: str,
     entry: str,
-    lang: str = None,
-    number: float = None,
+    lang: Optional[str] = None,
+    number: Optional[float] = None,
     **kwargs: str,
 ) -> str:
     """Template tag for Translaas translations.
