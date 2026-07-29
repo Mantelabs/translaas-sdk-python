@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-07-29
+
+First **stable** patch on the **0.5** line. No API or runtime behavior changes since **0.5.0b1**; maintenance release for CI/toolchain hardening and test reliability. Coordinated with JS **0.5.1-beta** / **0.5.3** stable alignment.
+
+### Changed
+
+- **Development toolchain:** ruff **0.15.20** with Python 3.8 typing-style ignores (`UP037`, `UP045`); pre-commit hooks aligned ([#54](https://github.com/Mantelabs/translaas-sdk-python/pull/54))
+- **CI:** consolidated GitHub Actions workflows and reduced runner cost ([#50](https://github.com/Mantelabs/translaas-sdk-python/pull/50))
+- **CI:** bump `actions/checkout` to **v7** and `actions/setup-python` to **v7** ([#53](https://github.com/Mantelabs/translaas-sdk-python/pull/53), [#55](https://github.com/Mantelabs/translaas-sdk-python/pull/55))
+- **PyPI classifier:** `Development Status :: 5 - Production/Stable`
+
+### Fixed
+
+- Flaky memory cache expiration tests on macOS CI runners ([#52](https://github.com/Mantelabs/translaas-sdk-python/pull/52))
+
+### Migration
+
+**From `0.5.0b1`:** drop-in replacement — `pip install -U translaas` (or `translaas==0.5.1`). No code changes required.
+
 ## [0.5.0b1] - 2026-06-09
 
 Minor beta release on **0.4.0b1**. Resolves default project id from the validate API key response for multi-project keys and aligns `t()` / offline plural and parameter behavior with the .NET SDK (**0.4.1-beta** line). Coordinated with JS **0.5.0-beta** alignment work.
@@ -181,7 +200,9 @@ SDK v1 HTTP parity (Phases A–C for [#41](https://github.com/acuencadev/transla
 - Version management system
 - Development environment setup scripts
 
-[Unreleased]: https://github.com/acuencadev/translaas-sdk-python/compare/v0.4.0b1...HEAD
+[Unreleased]: https://github.com/acuencadev/translaas-sdk-python/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/acuencadev/translaas-sdk-python/compare/v0.5.0b1...v0.5.1
+[0.5.0b1]: https://github.com/acuencadev/translaas-sdk-python/compare/v0.4.0b1...v0.5.0b1
 [0.4.0b1]: https://github.com/acuencadev/translaas-sdk-python/compare/v0.3.0b2...v0.4.0b1
 [0.3.0b2]: https://github.com/acuencadev/translaas-sdk-python/compare/v0.3.0b1...v0.3.0b2
 [0.3.0b1]: https://github.com/acuencadev/translaas-sdk-python/compare/v0.1.2...v0.3.0b1
