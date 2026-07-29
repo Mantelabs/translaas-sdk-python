@@ -162,8 +162,9 @@ select = [
 ignore = [
     "E501",  # line too long, handled by black
     "B008",  # do not perform function calls in argument defaults
-    # Ruff in pre-commit is v0.1.6; only use rule codes it knows (no UP037/UP045).
     "UP007",  # Union[X, Y] vs X | Y — keep Python 3.8 / Optional-style typing
+    "UP037",  # quoted annotations — keep forward-ref style where needed
+    "UP045",  # Optional[X] vs X | None — keep Python 3.8 / Optional-style typing
 ]
 
 [tool.ruff.per-file-ignores]
