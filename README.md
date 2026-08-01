@@ -306,7 +306,27 @@ python -m build
 
 ```bash
 pytest
+# or
+make test
 ```
+
+Unit tests exclude the optional **live API** suite (`@pytest.mark.live`). Live tests require `TRANSLAAS_API_KEY` and are skipped when it is unset.
+
+### Live API integration tests
+
+Against local Docker or a staging API with the `translaas-sdk-samples` project seeded:
+
+```powershell
+# PowerShell
+$env:TRANSLAAS_API_KEY = "your-key"
+$env:TRANSLAAS_BASE_URL = "https://api.translaas.local"   # optional
+$env:TRANSLAAS_DEFAULT_PROJECT = "translaas-sdk-samples"  # optional
+
+make test-integration
+# or: pytest -m live --no-cov -v
+```
+
+See [`tests/integration/live/README.md`](tests/integration/live/README.md) for the full matrix and GitHub Actions `workflow_dispatch` workflow.
 
 ### Running Tests with Coverage
 
