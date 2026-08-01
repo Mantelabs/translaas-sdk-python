@@ -1,0 +1,45 @@
+name: Integration Tests
+
+# Optional live API checks. Configure repository secrets TRANSLAAS_BASE_URL and
+# TRANSLAAS_API_KEY (never commit API keys). Default branch CI does not require these.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-api:
+    name: Live API integration tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Run live integration tests
+        env:
+          TRANSLAAS_BASE_URL: ${{ secrets.TRANSLAAS_BASE_URL }}
+          TRANSLAAS_API_KEY: ${{ secrets.TRANSLAAS_API_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${TRANSLAAS_BASE_URL:-}" || -z "${TRANSLAAS_API_KEY:-}" ]]; then
+            echo "Set repository secrets TRANSLAAS_BASE_URL and TRANSLAAS_API_KEY before running this workflow."
+            exit 1
+          fi
+          pytest -m live --no-cov -v

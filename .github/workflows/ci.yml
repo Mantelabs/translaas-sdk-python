@@ -9,6 +9,7 @@ on:
       - '.github/workflows/ci.yml'
       - 'translaas/**/*.py'
       - 'tests/**/*.py'
+      - 'Makefile'
       - 'pyproject.toml'
       - 'setup.py'
       - 'requirements*.txt'
@@ -116,7 +117,7 @@ jobs:
           pip install -e ".[dev]"
 
       - name: Run tests
-        run: pytest
+        run: pytest -m "not live"
 
       - name: Upload coverage
         if: matrix.python-version == '3.12'
@@ -156,4 +157,4 @@ jobs:
           pip install -e ".[dev]"
 
       - name: Run tests
-        run: pytest --no-cov
+        run: pytest -m "not live" --no-cov
