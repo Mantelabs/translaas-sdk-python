@@ -1,5 +1,7 @@
 name: CI
 
+# Default: Ubuntu only (push/PR) to limit Actions spend across SDK repos.
+# Windows + macOS smoke: run manually — Actions → CI → Run workflow.
 on:
   push:
     branches:
@@ -127,19 +129,41 @@ jobs:
           flags: unit
           name: unit-tests
 
-  cross-platform-smoke:
-    name: Smoke (${{ matrix.os }}, Python 3.10)
+  # Windows: manual runs only (Actions → CI → Run workflow).
+  smoke-windows-manual:
+    name: Smoke — Windows (Python 3.10)
+    if: github.event_name == 'workflow_dispatch'
     needs:
       - lint-and-typecheck
       - build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os:
-          - windows-latest
-          - macos-latest
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.10'
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Run tests
+        run: pytest -m "not live" --no-cov
+
+  # macOS: manual runs only (Actions → CI → Run workflow).
+  smoke-macos-manual:
+    name: Smoke — macOS (Python 3.10)
+    if: github.event_name == 'workflow_dispatch'
+    needs:
+      - lint-and-typecheck
+      - build
+    runs-on: macos-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
