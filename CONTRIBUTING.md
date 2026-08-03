@@ -428,8 +428,8 @@ GitHub Actions runs a single **CI** workflow (`.github/workflows/ci.yml`). Pull 
 |------|------|
 | **Pull request** to `main` or `develop` | Lint (`ruff`), typecheck (`mypy`), one-off build, unit tests on **Ubuntu + Python 3.12**, Codecov upload |
 | **Push** to `main` or `develop` | Same checks plus unit tests on **Python 3.8–3.12** (Ubuntu matrix) |
-| **Push** to `main` only | Additional **Windows** and **macOS** smoke tests (Python 3.10, `pytest --no-cov`, live tests excluded) |
-| **Manual** (`workflow_dispatch`) | **Integration Tests** workflow — live API matrix when `TRANSLAAS_API_KEY` + `TRANSLAAS_BASE_URL` secrets are configured |
+| **Manual** (`workflow_dispatch` on **CI**) | Optional **Windows** and **macOS** smoke tests (Python 3.10, `pytest --no-cov`, live tests excluded) |
+| **Manual** (`workflow_dispatch` on **Integration Tests**) | Live API matrix when `TRANSLAAS_API_KEY` + `TRANSLAAS_BASE_URL` secrets are configured |
 
 Default CI runs `pytest -m "not live"`. Optional live tests live under `tests/integration/live/` and skip when `TRANSLAAS_API_KEY` is unset.
 
