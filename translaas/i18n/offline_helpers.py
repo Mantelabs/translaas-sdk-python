@@ -5,14 +5,27 @@ from __future__ import annotations
 import re
 from typing import Mapping, Optional, Union
 
+from translaas.i18n.plural_resolver import PluralResolver
 from translaas.models.enums import PluralCategory
 
 
-def determine_plural_category(number: Optional[float]) -> PluralCategory:
-    """Match .NET offline ``DeterminePluralCategory`` (one/other only; lang ignored)."""
-    if number is None:
-        return PluralCategory.OTHER
-    return PluralCategory.ONE if number == 1 else PluralCategory.OTHER
+def determine_plural_category(
+    number: Optional[float],
+    lang: Optional[str] = None,
+) -> PluralCategory:
+    """Resolve the CLDR cardinal category for offline cache selection.
+
+    Delegates to ``PluralResolver.resolve_category``. Empty or invalid ``lang``
+    values fall back to English CLDR rules.
+
+    Args:
+        number: Plural count. ``None`` selects ``other``.
+        lang: BCP-47 language tag used for CLDR selection.
+
+    Returns:
+        The CLDR plural category.
+    """
+    return PluralResolver.resolve_category(number, lang)
 
 
 def _get_param_value(parameters: Mapping[str, str], name: str) -> Optional[str]:

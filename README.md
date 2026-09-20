@@ -216,11 +216,11 @@ The Python SDK aligns with the [.NET Translaas.SDK](https://github.com/acuencade
 
 | Area | Online (`TranslaasClient` / `t()`) | Offline (`CachingTranslaasClient`) |
 | ---- | ----------------------------------- | ---------------------------------- |
-| Plural selection | Server resolves via `n` / `N` query params | One/other only (`1 → one`, else `other`; language ignored) |
+| Plural selection | Server resolves via `n` / `N` query params | CLDR cardinal via Babel (`PluralResolver` / `determine_plural_category`), same categories as the live API |
 | Parameter substitution | Server resolves when using `TranslaasClient.get_entry()`; `TranslaasService.t()` applies client-side `{name}` / `{{name}}` after fetch | `{name}` placeholders only; case-insensitive keys; auto-`N` from `number` unless explicit `N` is provided |
 | `t()` overloads | `t(group, entry, lang, number, parameters)` and auto-language variants | Same service API; offline cache path uses .NET-aligned helpers |
 
-`TranslaasService.t()` sends `number` to the API for plural resolution and performs parameter replacement client-side (matching .NET `ITranslaasService.T`). Offline cache reads use `determine_plural_category` and `substitute_parameters` from `translaas.i18n.offline_helpers`.
+`TranslaasService.t()` sends `number` to the API for plural resolution and performs parameter replacement client-side (matching .NET `ITranslaasService.T`). Offline cache reads use `determine_plural_category(number, lang)` (CLDR cardinal rules for the request locale) and `substitute_parameters` from `translaas.i18n.offline_helpers`.
 
 ## Usage Examples
 

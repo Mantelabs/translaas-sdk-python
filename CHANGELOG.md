@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Offline / file-cache `get_entry` plural selection now uses CLDR cardinal rules for the request locale (via Babel), matching the live API, instead of treating `1` as `one` and every other value as `other` (language ignored).
+- **`determine_plural_category`** now takes `lang` (BCP-47). Omit or pass `None` to fall back to English CLDR. Direct callers of the helper should pass the request locale; `CachingTranslaasClient` already does.
+- Runtime dependency on **Babel** `>=2.18.0,<3` (~10 MB wheel, BSD-3-Clause) for that selection. Python **<3.9** may also pull transitive **`pytz`**. HTTP-only usage still installs Babel because it is a required package dependency.
+
 ## [0.5.1] - 2026-07-29
 
 First **stable** patch on the **0.5** line. No API or runtime behavior changes since **0.5.0b1**; maintenance release for CI/toolchain hardening and test reliability. Coordinated with JS **0.5.1-beta** / **0.5.3** stable alignment.

@@ -171,7 +171,7 @@ async def test_get_entry_plural_from_cache(
 
 
 @pytest.mark.asyncio
-async def test_get_entry_plural_uses_one_other_only(
+async def test_get_entry_plural_french_zero_selects_one(
     inner_client: AsyncMock, offline_options: OfflineCacheOptions
 ) -> None:
     cache = _MockOfflineCache()
@@ -180,7 +180,7 @@ async def test_get_entry_plural_uses_one_other_only(
     )
     client = _create_client(inner_client, cache, OfflineFallbackMode.CACHE_ONLY, offline_options)
     zero = await client.get_entry("items", "count", "fr", number=0)
-    assert zero == "0 articles"
+    assert zero == "1 article"
 
 
 @pytest.mark.asyncio
