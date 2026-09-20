@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+from typing import Tuple
+
 from translaas.models.enums import PluralCategory
 
-GoldenRow = tuple[str, float, PluralCategory]
+GoldenRow = Tuple[str, float, PluralCategory]
 
 GOLDEN_PLURAL_ROWS: list[GoldenRow] = [
     ("ar", 0, PluralCategory.ZERO),
