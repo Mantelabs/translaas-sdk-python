@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Python 3.8 test collection: `GoldenRow` now uses `typing.Tuple` instead of a PEP 585 `tuple[...]` runtime alias, which is not subscriptable on 3.8.
+
 ### Changed
 
 - Offline / file-cache `get_entry` plural selection now uses CLDR cardinal rules for the request locale (via Babel), matching the live API, instead of treating `1` as `one` and every other value as `other` (language ignored).
