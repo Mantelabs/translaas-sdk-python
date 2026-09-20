@@ -373,7 +373,7 @@ class CachingTranslaasClient(ITranslaasClient):
             return None
         template: Optional[str] = None
         if group.has_plural_forms(entry):
-            category = determine_plural_category(number)
+            category = determine_plural_category(number, lang)
             template = group.get_plural_form(entry, category)
             if template is None and category != PluralCategory.OTHER:
                 template = group.get_plural_form(entry, PluralCategory.OTHER)
