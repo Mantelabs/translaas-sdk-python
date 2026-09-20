@@ -1,19 +1,41 @@
 """Tests for offline helpers aligned with .NET CachingTranslaasClient."""
 
+from __future__ import annotations
+
+import pytest
+
 from translaas.i18n.offline_helpers import determine_plural_category, substitute_parameters
 from translaas.models.enums import PluralCategory
 
 
-def test_determine_plural_category_one_other() -> None:
-    assert determine_plural_category(1) == PluralCategory.ONE
-    assert determine_plural_category(0) == PluralCategory.OTHER
-    assert determine_plural_category(5) == PluralCategory.OTHER
-    assert determine_plural_category(None) == PluralCategory.OTHER
+def test_determine_plural_category_english_one_other() -> None:
+    assert determine_plural_category(1, "en") == PluralCategory.ONE
+    assert determine_plural_category(0, "en") == PluralCategory.OTHER
+    assert determine_plural_category(5, "en") == PluralCategory.OTHER
+    assert determine_plural_category(None, "en") == PluralCategory.OTHER
 
 
-def test_determine_plural_category_ignores_language() -> None:
-    assert determine_plural_category(0) == PluralCategory.OTHER
-    assert determine_plural_category(1) == PluralCategory.ONE
+def test_determine_plural_category_null_returns_other() -> None:
+    assert determine_plural_category(None, "fr") == PluralCategory.OTHER
+
+
+def test_determine_plural_category_passes_lang() -> None:
+    assert determine_plural_category(0, "fr") == PluralCategory.ONE
+    assert determine_plural_category(0, "en") == PluralCategory.OTHER
+
+
+@pytest.mark.parametrize(
+    "lang,number,expected",
+    [
+        ("fr", 0, PluralCategory.ONE),
+        ("en", 1, PluralCategory.ONE),
+        ("pl", 2, PluralCategory.FEW),
+    ],
+)
+def test_determine_plural_category_delegates_to_resolver(
+    lang: str, number: float, expected: PluralCategory
+) -> None:
+    assert determine_plural_category(number, lang) == expected
 
 
 def test_substitute_parameters_single_placeholder() -> None:
