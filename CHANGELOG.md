@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-09-30
+
 ### Fixed
 
 - Python 3.8 test collection: `GoldenRow` now uses `typing.Tuple` instead of a PEP 585 `tuple[...]` runtime alias, which is not subscriptable on 3.8.
@@ -16,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Offline / file-cache `get_entry` plural selection now uses CLDR cardinal rules for the request locale (via Babel), matching the live API, instead of treating `1` as `one` and every other value as `other` (language ignored).
 - **`determine_plural_category`** now takes `lang` (BCP-47). Omit or pass `None` to fall back to English CLDR. Direct callers of the helper should pass the request locale; `CachingTranslaasClient` already does.
 - Runtime dependency on **Babel** `>=2.18.0,<3` (~10 MB wheel, BSD-3-Clause) for that selection. Python **<3.9** may also pull transitive **`pytz`**. HTTP-only usage still installs Babel because it is a required package dependency.
+
+### Migration
+
+**From `0.5.1`:** `pip install -U translaas` (or `translaas==0.5.2`). Offline plural results for non-English locales can change. Pass `lang` to `determine_plural_category` when calling it directly; omit it to keep English CLDR. Babel is now a required dependency.
 
 ## [0.5.1] - 2026-07-29
 
@@ -210,7 +216,8 @@ SDK v1 HTTP parity (Phases A–C for [#41](https://github.com/acuencadev/transla
 - Version management system
 - Development environment setup scripts
 
-[Unreleased]: https://github.com/acuencadev/translaas-sdk-python/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/acuencadev/translaas-sdk-python/compare/v0.5.2...HEAD
+[0.5.2]: https://github.com/acuencadev/translaas-sdk-python/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/acuencadev/translaas-sdk-python/compare/v0.5.0b1...v0.5.1
 [0.5.0b1]: https://github.com/acuencadev/translaas-sdk-python/compare/v0.4.0b1...v0.5.0b1
 [0.4.0b1]: https://github.com/acuencadev/translaas-sdk-python/compare/v0.3.0b2...v0.4.0b1
